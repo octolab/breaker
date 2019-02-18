@@ -129,31 +129,41 @@ func TestMultiplexThree(t *testing.T) {
 
 func TestWithContext(t *testing.T) {
 	t.Run("active breaker", func(t *testing.T) {
-		ctx := WithContext(context.Background(), BreakByTimeout(5*delta))
+		var (
+			ctx, _ = context.WithTimeout(context.Background(), 5*delta)
+			br, _  = WithContext(ctx)
+		)
 		start := time.Now()
-		<-ctx.Done()
+		<-br.Done()
 		assert.WithinDuration(t, start.Add(5*delta), time.Now(), delta)
 	})
 	t.Run("closed breaker", func(t *testing.T) {
-		ctx := WithContext(context.Background(), BreakByTimeout(-delta))
+		var (
+			ctx, _ = context.WithTimeout(context.Background(), -delta)
+			br, _  = WithContext(ctx)
+		)
 		start := time.Now()
-		<-ctx.Done()
+		<-br.Done()
 		assert.WithinDuration(t, start, time.Now(), delta)
 	})
 	t.Run("released breaker", func(t *testing.T) {
-		br := BreakByTimeout(time.Hour)
-		ctx := WithContext(context.Background(), br)
+		var (
+			ctx, _ = context.WithTimeout(context.Background(), time.Hour)
+			br, _  = WithContext(ctx)
+		)
 		br.Close()
 		start := time.Now()
-		<-ctx.Done()
+		<-br.Done()
 		assert.WithinDuration(t, start, time.Now(), delta)
 	})
 	t.Run("canceled parent", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		ctx = WithContext(ctx, BreakByTimeout(time.Hour))
+		var (
+			ctx, cancel = context.WithTimeout(context.Background(), time.Hour)
+			br, _       = WithContext(ctx)
+		)
 		cancel()
 		start := time.Now()
-		<-ctx.Done()
+		<-br.Done()
 		assert.WithinDuration(t, start, time.Now(), delta)
 	})
 }
