@@ -130,27 +130,30 @@ func TestMultiplexThree(t *testing.T) {
 func TestWithContext(t *testing.T) {
 	t.Run("active breaker", func(t *testing.T) {
 		var (
-			ctx, _ = context.WithTimeout(context.Background(), 5*delta)
-			br, _  = WithContext(ctx)
+			ctx, cancel = context.WithTimeout(context.Background(), 5*delta)
+			br, _       = WithContext(ctx)
 		)
+		defer cancel()
 		start := time.Now()
 		<-br.Done()
 		assert.WithinDuration(t, start.Add(5*delta), time.Now(), delta)
 	})
 	t.Run("closed breaker", func(t *testing.T) {
 		var (
-			ctx, _ = context.WithTimeout(context.Background(), -delta)
-			br, _  = WithContext(ctx)
+			ctx, cancel = context.WithTimeout(context.Background(), -delta)
+			br, _       = WithContext(ctx)
 		)
+		defer cancel()
 		start := time.Now()
 		<-br.Done()
 		assert.WithinDuration(t, start, time.Now(), delta)
 	})
 	t.Run("released breaker", func(t *testing.T) {
 		var (
-			ctx, _ = context.WithTimeout(context.Background(), time.Hour)
-			br, _  = WithContext(ctx)
+			ctx, cancel = context.WithTimeout(context.Background(), time.Hour)
+			br, _       = WithContext(ctx)
 		)
+		defer cancel()
 		br.Close()
 		start := time.Now()
 		<-br.Done()
