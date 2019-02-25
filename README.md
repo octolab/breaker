@@ -2,6 +2,7 @@
 >
 > Flexible mechanism to make your code breakable.
 
+[![Awesome][icon_awesome]][awesome]
 [![Patreon][icon_patreon]][support]
 [![GoDoc][icon_docs]][docs]
 [![License][icon_license]][license]
@@ -52,9 +53,12 @@ It is stable, well-tested and production ready.
 
 made with ❤️ by [OctoLab][octolab]
 
+[awesome]:         https://github.com/avelino/awesome-go#goroutines
+[build]:           https://travis-ci.org/kamilsk/breaker
 [docs]:            https://godoc.org/github.com/kamilsk/breaker
 [license]:         LICENSE
 [promo]:           https://github.com/kamilsk/breaker
+[quality]:         https://scrutinizer-ci.com/g/kamilsk/breaker/?branch=master
 
 [click]:           https://github.com/kamilsk/click
 [forma]:           https://github.com/kamilsk/form-api
@@ -67,8 +71,13 @@ made with ❤️ by [OctoLab][octolab]
 [sponsor]:         https://twitter.com/octolab_inc
 [support]:         https://www.patreon.com/octolab
 
+[icon_awesome]:    https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg
+[icon_build]:      https://travis-ci.org/kamilsk/breaker.svg?branch=master
+[icon_coverage]:   https://scrutinizer-ci.com/g/kamilsk/breaker/badges/coverage.png?b=master
 [icon_docs]:       https://godoc.org/github.com/kamilsk/breaker?status.svg
 [icon_license]:    https://img.shields.io/badge/license-MIT-blue.svg
 [icon_patreon]:    https://img.shields.io/badge/patreon-donate-orange.svg
+[icon_quality]:    https://scrutinizer-ci.com/g/kamilsk/breaker/badges/quality-score.png?b=master
 [icon_tw_author]:  https://img.shields.io/badge/author-%40kamilsk-blue.svg
 [icon_tw_sponsor]: https://img.shields.io/badge/sponsor-%40octolab-blue.svg
+[icon_twitter]:    https://img.shields.io/twitter/url/http/shields.io.svg?style=social
