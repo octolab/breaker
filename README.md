@@ -4,6 +4,9 @@
 
 [![Awesome][icon_awesome]][awesome]
 [![Patreon][icon_patreon]][support]
+[![Build][icon_build]][build]
+[![Quality][icon_quality]][quality]
+[![Coverage][icon_coverage]][coverage]
 [![GoDoc][icon_docs]][docs]
 [![License][icon_license]][license]
 
@@ -41,11 +44,6 @@ defer interrupter.Close()
 <-interrupter.Done() // wait context cancellation, timeout or interrupt signal
 ```
 
-## Notice
-
-This package is based on the [platform][] - my toolset to build microservices such as [click][] or [forma][].
-It is stable, well-tested and production ready.
-
 ---
 
 [![@kamilsk][icon_tw_author]][author]
@@ -60,9 +58,6 @@ made with ❤️ by [OctoLab][octolab]
 [promo]:           https://github.com/kamilsk/breaker
 [quality]:         https://scrutinizer-ci.com/g/kamilsk/breaker/?branch=master
 
-[click]:           https://github.com/kamilsk/click
-[forma]:           https://github.com/kamilsk/form-api
-[platform]:        https://github.com/kamilsk/platform
 [retry]:           https://github.com/kamilsk/retry
 [semaphore]:       https://github.com/kamilsk/semaphore
 
