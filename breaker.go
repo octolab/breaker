@@ -1,4 +1,4 @@
-package breaker // import "github.com/kamilsk/breaker"
+package breaker
 
 import (
 	"context"
