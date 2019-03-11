@@ -16,12 +16,16 @@ func TestMultiplex(t *testing.T) {
 		start := time.Now()
 		<-br.Done()
 		assert.WithinDuration(t, start.Add(5*delta), time.Now(), delta)
+
+		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
 	})
 	t.Run("without breakers", func(t *testing.T) {
 		br := Multiplex()
 		start := time.Now()
 		<-br.Done()
 		assert.WithinDuration(t, start, time.Now(), delta)
+
+		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
 	})
 	t.Run("close multiple times", func(t *testing.T) {
 		br := Multiplex(BreakByTimeout(time.Hour))
@@ -29,6 +33,8 @@ func TestMultiplex(t *testing.T) {
 		start := time.Now()
 		<-br.Done()
 		assert.WithinDuration(t, start, time.Now(), delta)
+
+		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
 	})
 }
 
@@ -40,6 +46,8 @@ func TestMultiplexTwo(t *testing.T) {
 	start := time.Now()
 	<-br.Done()
 	assert.WithinDuration(t, start, time.Now(), delta)
+
+	delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
 }
 
 func TestMultiplexThree(t *testing.T) {
@@ -51,4 +59,6 @@ func TestMultiplexThree(t *testing.T) {
 	start := time.Now()
 	<-br.Done()
 	assert.WithinDuration(t, start, time.Now(), delta)
+
+	delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
 }

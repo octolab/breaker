@@ -1,7 +1,6 @@
 package breaker_test
 
 import (
-	"context"
 	"os"
 	"testing"
 	"time"
@@ -18,12 +17,16 @@ func TestBreakByDeadline(t *testing.T) {
 		start := time.Now()
 		<-br.Done()
 		assert.WithinDuration(t, start.Add(5*delta), time.Now(), delta)
+
+		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
 	})
 	t.Run("passed deadline", func(t *testing.T) {
 		br := BreakByDeadline(time.Now().Add(-delta))
 		start := time.Now()
 		<-br.Done()
 		assert.WithinDuration(t, start, time.Now(), delta)
+
+		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
 	})
 	t.Run("close multiple times", func(t *testing.T) {
 		br := BreakByDeadline(time.Now().Add(time.Hour))
@@ -31,6 +34,8 @@ func TestBreakByDeadline(t *testing.T) {
 		start := time.Now()
 		<-br.Done()
 		assert.WithinDuration(t, start, time.Now(), delta)
+
+		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
 	})
 }
 
@@ -45,12 +50,16 @@ func TestBreakBySignal(t *testing.T) {
 		}()
 		<-br.Done()
 		assert.WithinDuration(t, start, time.Now(), delta)
+
+		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
 	})
 	t.Run("without signal", func(t *testing.T) {
 		br := BreakBySignal()
 		start := time.Now()
 		<-br.Done()
 		assert.WithinDuration(t, start, time.Now(), delta)
+
+		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
 	})
 	t.Run("close multiple times", func(t *testing.T) {
 		br := BreakBySignal(os.Kill)
@@ -58,6 +67,8 @@ func TestBreakBySignal(t *testing.T) {
 		start := time.Now()
 		<-br.Done()
 		assert.WithinDuration(t, start, time.Now(), delta)
+
+		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
 	})
 }
 
@@ -67,12 +78,16 @@ func TestBreakByTimeout(t *testing.T) {
 		start := time.Now()
 		<-br.Done()
 		assert.WithinDuration(t, start.Add(5*delta), time.Now(), delta)
+
+		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
 	})
 	t.Run("passed timeout", func(t *testing.T) {
 		br := BreakByTimeout(-delta)
 		start := time.Now()
 		<-br.Done()
 		assert.WithinDuration(t, start, time.Now(), delta)
+
+		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
 	})
 	t.Run("close multiple times", func(t *testing.T) {
 		br := BreakByTimeout(time.Hour)
@@ -80,51 +95,14 @@ func TestBreakByTimeout(t *testing.T) {
 		start := time.Now()
 		<-br.Done()
 		assert.WithinDuration(t, start, time.Now(), delta)
+
+		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
 	})
 }
 
-func TestWithContext(t *testing.T) {
-	t.Run("active breaker", func(t *testing.T) {
-		var (
-			ctx, cancel = context.WithTimeout(context.Background(), 5*delta)
-			br, _       = WithContext(ctx)
-		)
-		defer cancel()
-		start := time.Now()
-		<-br.Done()
-		assert.WithinDuration(t, start.Add(5*delta), time.Now(), delta)
-	})
-	t.Run("closed breaker", func(t *testing.T) {
-		var (
-			ctx, cancel = context.WithTimeout(context.Background(), -delta)
-			br, _       = WithContext(ctx)
-		)
-		defer cancel()
-		start := time.Now()
-		<-br.Done()
-		assert.WithinDuration(t, start, time.Now(), delta)
-	})
-	t.Run("released breaker", func(t *testing.T) {
-		var (
-			ctx, cancel = context.WithTimeout(context.Background(), time.Hour)
-			br, _       = WithContext(ctx)
-		)
-		defer cancel()
-		br.Close()
-		start := time.Now()
-		<-br.Done()
-		assert.WithinDuration(t, start, time.Now(), delta)
-	})
-	t.Run("canceled parent", func(t *testing.T) {
-		var (
-			ctx, cancel = context.WithTimeout(context.Background(), time.Hour)
-			br, _       = WithContext(ctx)
-		)
-		cancel()
-		start := time.Now()
-		<-br.Done()
-		assert.WithinDuration(t, start, time.Now(), delta)
-	})
+func delay(action func(), d time.Duration) {
+	time.Sleep(d)
+	action()
 }
 
 func repeat(action func(), times int) {
