@@ -10,30 +10,6 @@ import (
 	"time"
 )
 
-// Interface carries a cancellation signal to break an action execution.
-//
-// Example based on github.com/kamilsk/retry package:
-//
-//  if err := retry.Retry(breaker.BreakByTimeout(time.Minute), action); err != nil {
-//  	log.Fatal(err)
-//  }
-//
-// Example based on github.com/kamilsk/semaphore package:
-//
-//  if err := semaphore.Acquire(breaker.BreakByTimeout(time.Minute), 5); err != nil {
-//  	log.Fatal(err)
-//  }
-//
-type Interface interface {
-	// Done returns a channel that's closed when a cancellation signal occurred.
-	Done() <-chan struct{}
-	// Close closes the Done channel and releases resources associated with it.
-	Close()
-	// trigger is a private method to guarantee that the Breakers come from
-	// this package and all of them return a valid Done channel.
-	trigger() Interface
-}
-
 // BreakByDeadline closes the Done channel when the deadline occurs.
 func BreakByDeadline(deadline time.Time) Interface {
 	timeout := time.Until(deadline)
@@ -57,43 +33,6 @@ func BreakByTimeout(timeout time.Duration) Interface {
 		return closedBreaker()
 	}
 	return newTimedBreaker(timeout).trigger()
-}
-
-// Multiplex combines multiple Breakers into one.
-func Multiplex(breakers ...Interface) Interface {
-	if len(breakers) == 0 {
-		return closedBreaker()
-	}
-	return newMultiplexedBreaker(breakers).trigger()
-}
-
-// MultiplexTwo combines two Breakers into one.
-// This is the optimized version of more generic Multiplex.
-func MultiplexTwo(one, two Interface) Interface {
-	br := newBreaker()
-	go func() {
-		defer br.Close()
-		select {
-		case <-one.Done():
-		case <-two.Done():
-		}
-	}()
-	return br
-}
-
-// MultiplexThree combines three Breakers into one.
-// This is the optimized version of more generic Multiplex.
-func MultiplexThree(one, two, three Interface) Interface {
-	br := newBreaker()
-	go func() {
-		defer br.Close()
-		select {
-		case <-one.Done():
-		case <-two.Done():
-		case <-three.Done():
-		}
-	}()
-	return br
 }
 
 // WithContext returns a new Breaker and an associated Context derived from ctx.
