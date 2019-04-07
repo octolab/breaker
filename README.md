@@ -44,6 +44,12 @@ defer interrupter.Close()
 <-interrupter.Done() // wait context cancellation, timeout or interrupt signal
 ```
 
+## Update
+
+This library is using [SemVer](https://semver.org/) for versioning, and it is not
+[BC](https://en.wikipedia.org/wiki/Backward_compatibility)-safe. You can use [dep][] or [Go Modules][gomod]
+to manage its version.
+
 ---
 
 [![@kamilsk][icon_tw_author]][author]
@@ -58,6 +64,8 @@ made with ❤️ by [OctoLab][octolab]
 [promo]:           https://github.com/kamilsk/breaker
 [quality]:         https://scrutinizer-ci.com/g/kamilsk/breaker/?branch=master
 
+[dep]:             https://golang.github.io/dep/
+[gomod]:           https://github.com/golang/go/wiki/Modules
 [retry]:           https://github.com/kamilsk/retry
 [semaphore]:       https://github.com/kamilsk/semaphore
 

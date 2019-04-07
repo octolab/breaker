@@ -6,7 +6,6 @@ import (
 	"time"
 
 	. "github.com/kamilsk/breaker"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestMultiplex(t *testing.T) {
@@ -15,26 +14,27 @@ func TestMultiplex(t *testing.T) {
 		defer br.Close()
 		start := time.Now()
 		<-br.Done()
-		assert.WithinDuration(t, start.Add(5*delta), time.Now(), delta)
 
-		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
+		checkDuration(t, start.Add(5*delta), time.Now())
+		checkBreakerIsReleased(t, br)
 	})
 	t.Run("without breakers", func(t *testing.T) {
 		br := Multiplex()
 		start := time.Now()
 		<-br.Done()
-		assert.WithinDuration(t, start, time.Now(), delta)
 
-		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
+		checkDuration(t, start, time.Now())
+		checkBreakerIsReleased(t, br)
 	})
 	t.Run("close multiple times", func(t *testing.T) {
 		br := Multiplex(BreakByTimeout(time.Hour))
-		repeat(br.Close, 5)
+		br.Close()
+		br.Close()
 		start := time.Now()
 		<-br.Done()
-		assert.WithinDuration(t, start, time.Now(), delta)
 
-		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
+		checkDuration(t, start, time.Now())
+		checkBreakerIsReleased(t, br)
 	})
 }
 
@@ -45,9 +45,9 @@ func TestMultiplexTwo(t *testing.T) {
 	)
 	start := time.Now()
 	<-br.Done()
-	assert.WithinDuration(t, start, time.Now(), delta)
 
-	delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
+	checkDuration(t, start, time.Now())
+	checkBreakerIsReleased(t, br)
 }
 
 func TestMultiplexThree(t *testing.T) {
@@ -58,7 +58,7 @@ func TestMultiplexThree(t *testing.T) {
 	)
 	start := time.Now()
 	<-br.Done()
-	assert.WithinDuration(t, start, time.Now(), delta)
 
-	delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
+	checkDuration(t, start, time.Now())
+	checkBreakerIsReleased(t, br)
 }

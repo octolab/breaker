@@ -6,7 +6,6 @@ import (
 	"time"
 
 	. "github.com/kamilsk/breaker"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestWithContext(t *testing.T) {
@@ -18,9 +17,9 @@ func TestWithContext(t *testing.T) {
 		defer cancel()
 		start := time.Now()
 		<-br.Done()
-		assert.WithinDuration(t, start.Add(5*delta), time.Now(), delta)
 
-		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
+		checkDuration(t, start.Add(5*delta), time.Now())
+		checkBreakerIsReleased(t, br)
 	})
 	t.Run("closed breaker", func(t *testing.T) {
 		var (
@@ -30,9 +29,9 @@ func TestWithContext(t *testing.T) {
 		defer cancel()
 		start := time.Now()
 		<-br.Done()
-		assert.WithinDuration(t, start, time.Now(), delta)
 
-		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
+		checkDuration(t, start, time.Now())
+		checkBreakerIsReleased(t, br)
 	})
 	t.Run("released breaker", func(t *testing.T) {
 		var (
@@ -43,9 +42,9 @@ func TestWithContext(t *testing.T) {
 		br.Close()
 		start := time.Now()
 		<-br.Done()
-		assert.WithinDuration(t, start, time.Now(), delta)
 
-		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
+		checkDuration(t, start, time.Now())
+		checkBreakerIsReleased(t, br)
 	})
 	t.Run("canceled parent", func(t *testing.T) {
 		var (
@@ -55,8 +54,8 @@ func TestWithContext(t *testing.T) {
 		cancel()
 		start := time.Now()
 		<-br.Done()
-		assert.WithinDuration(t, start, time.Now(), delta)
 
-		delay(func() { assert.True(t, br.(interface{ Released() bool }).Released()) }, delta)
+		checkDuration(t, start, time.Now())
+		checkBreakerIsReleased(t, br)
 	})
 }
