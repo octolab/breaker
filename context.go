@@ -30,7 +30,6 @@ func (br *contextBreaker) Close() {
 func (br *contextBreaker) trigger() Interface {
 	go func() {
 		<-br.signal
-		br.Close()
 		atomic.StoreInt32(&br.released, 1)
 	}()
 	return br

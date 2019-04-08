@@ -1,6 +1,7 @@
 package breaker_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -44,11 +45,11 @@ func TestBreakBySignal(t *testing.T) {
 		go func() {
 			proc, err := os.FindProcess(os.Getpid())
 			if err != nil {
-				t.Fatalf("error is not expected: %v", err)
+				panic(fmt.Errorf("error is not expected: %v", err))
 			}
 			err = proc.Signal(os.Interrupt)
 			if err != nil {
-				t.Fatalf("error is not expected: %v", err)
+				panic(fmt.Errorf("error is not expected: %v", err))
 			}
 		}()
 		<-br.Done()
