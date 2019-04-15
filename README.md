@@ -1,6 +1,6 @@
 > # 🚧 breaker
 >
-> Flexible mechanism to make your code breakable.
+> Flexible mechanism to make your code interruptible.
 
 [![Awesome][icon_awesome]][awesome]
 [![Patreon][icon_patreon]][support]
@@ -47,7 +47,7 @@ defer interrupter.Close()
 ## Update
 
 This library is using [SemVer](https://semver.org/) for versioning, and it is not
-[BC](https://en.wikipedia.org/wiki/Backward_compatibility)-safe. You can use [dep][] or [Go Modules][gomod]
+[BC](https://en.wikipedia.org/wiki/Backward_compatibility)-safe. You can use [dep][] or [go modules][gomod]
 to manage its version.
 
 ---
