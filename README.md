@@ -14,10 +14,6 @@ The breaker carries a cancellation signal to interrupt an action execution.
 
 ```go
 interrupter := breaker.Multiplex(
-	func () breaker.Interface {
-		br, _ := breaker.WithContext(request.Context())
-		return br
-	}()
 	breaker.BreakByTimeout(time.Minute),
 	breaker.BreakBySignal(os.Interrupt),
 )
@@ -31,7 +27,7 @@ Full description of the idea is available
 
 ## 🏆 Motivation
 
-I want to make [github.com/kamilsk/retry][retry] package:
+I have to make [github.com/kamilsk/retry][retry] package:
 
 ```go
 if err := retry.Retry(breaker.BreakByTimeout(time.Minute), action); err != nil {
@@ -51,7 +47,61 @@ more consistent and reliable.
 
 ## 🤼‍♂️ How to
 
-...
+```go
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/kamilsk/breaker"
+)
+
+func Handle(rw http.ResponseWriter, req *http.Request) {
+	ctx, cancel := context.WithTimeout(req.Context(), time.Second)
+	defer cancel()
+
+	deadline, _ := time.ParseDuration(req.Header.Get("X-Timeout"))
+	if deadline == 0 {
+		deadline = 7 * time.Millisecond
+	}
+	interrupter := breaker.Multiplex(
+		breaker.BreakByTimeout(deadline),
+		breaker.BreakBySignal(os.Interrupt),
+	)
+
+	buf, work := bytes.NewBuffer(nil), Work(ctx, struct{}{})
+	for {
+		select {
+		case b, ok := <-work:
+			if !ok {
+				rw.WriteHeader(http.StatusOK)
+				_, _ = io.Copy(rw, buf)
+				return
+			}
+			_, _ = buf.Write([]byte{b})
+		case <-interrupter.Done():
+			rw.WriteHeader(http.StatusPartialContent)
+			rw.Header().Set("Content-Range", fmt.Sprintf("bytes=0-%d", buf.Len()))
+			_, _ = io.Copy(rw, buf)
+			return
+		}
+	}
+}
+
+func Work(ctx context.Context, _ struct{}) <-chan byte {
+	outcome := make(chan byte, 1)
+
+	go func() {
+		...
+	}()
+
+	return outcome
+}
+```
 
 ## 🧩 Integration
 
