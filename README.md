@@ -2,11 +2,11 @@
 >
 > Flexible mechanism to make execution flow interruptible.
 
-[![Awesome][icon_awesome]][page_awesome]
 [![Build][icon_build]][page_build]
-[![Coverage][icon_coverage]][page_coverage]
 [![Quality][icon_quality]][page_quality]
 [![Documentation][icon_docs]][page_docs]
+[![Coverage][icon_coverage]][page_coverage]
+[![Awesome][icon_awesome]][page_awesome]
 
 ## 💡 Idea
 
@@ -65,9 +65,6 @@ func Handle(rw http.ResponseWriter, req *http.Request) {
 	defer cancel()
 
 	deadline, _ := time.ParseDuration(req.Header.Get("X-Timeout"))
-	if deadline == 0 {
-		deadline = 7 * time.Millisecond
-	}
 	interrupter := breaker.Multiplex(
 		breaker.BreakByTimeout(deadline),
 		breaker.BreakBySignal(os.Interrupt),
@@ -79,14 +76,14 @@ func Handle(rw http.ResponseWriter, req *http.Request) {
 		case b, ok := <-work:
 			if !ok {
 				rw.WriteHeader(http.StatusOK)
-				_, _ = io.Copy(rw, buf)
+				io.Copy(rw, buf)
 				return
 			}
-			_, _ = buf.Write([]byte{b})
+			buf.WriteByte(b)
 		case <-interrupter.Done():
 			rw.WriteHeader(http.StatusPartialContent)
 			rw.Header().Set("Content-Range", fmt.Sprintf("bytes=0-%d", buf.Len()))
-			_, _ = io.Copy(rw, buf)
+			io.Copy(rw, buf)
 			return
 		}
 	}

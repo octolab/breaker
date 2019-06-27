@@ -18,7 +18,7 @@ import (
 func Example() {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/work", nil)
-	req.Header.Set("X-Timeout", "40ms")
+	req.Header.Set("X-Timeout", "50ms")
 
 	http.HandlerFunc(Handle).ServeHTTP(rec, req)
 
@@ -35,9 +35,6 @@ func Handle(rw http.ResponseWriter, req *http.Request) {
 	defer cancel()
 
 	deadline, _ := time.ParseDuration(req.Header.Get("X-Timeout"))
-	if deadline == 0 {
-		deadline = 7 * time.Millisecond
-	}
 	interrupter := breaker.Multiplex(
 		func() breaker.Interface {
 			br, _ := breaker.WithContext(req.Context())
@@ -56,7 +53,7 @@ func Handle(rw http.ResponseWriter, req *http.Request) {
 				_, _ = io.Copy(rw, buf)
 				return
 			}
-			_, _ = buf.Write([]byte{b})
+			_ = buf.WriteByte(b)
 		case <-interrupter.Done():
 			rw.WriteHeader(http.StatusPartialContent)
 			rw.Header().Set("Content-Range", fmt.Sprintf("bytes=0-%d", buf.Len()))
