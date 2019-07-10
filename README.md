@@ -22,8 +22,7 @@ defer interrupter.Close()
 <-interrupter.Done() // wait context cancellation, timeout or interrupt signal
 ```
 
-Full description of the idea is available
-[here](https://www.notion.so/octolab/breaker-77116e98fda74c28bd64e42bd440bbf3?r=0b753cbf767346f5a6fd51194829a2f3).
+Full description of the idea is available [here][design].
 
 ## 🏆 Motivation
 
@@ -92,9 +91,7 @@ func Handle(rw http.ResponseWriter, req *http.Request) {
 func Work(ctx context.Context, _ struct{}) <-chan byte {
 	outcome := make(chan byte, 1)
 
-	go func() {
-		...
-	}()
+	go func() { ... }()
 
 	return outcome
 }
@@ -104,32 +101,36 @@ func Work(ctx context.Context, _ struct{}) <-chan byte {
 
 The library uses [SemVer](https://semver.org) for versioning, and it is not
 [BC](https://en.wikipedia.org/wiki/Backward_compatibility)-safe through major releases.
-You can use [dep][] or [go modules][gomod] to manage its version.
+You can use [go modules](https://github.com/golang/go/wiki/Modules) or
+[dep](https://golang.github.io/dep/) to manage its version.
 
 ```bash
-$ dep ensure -add github.com/kamilsk/breaker
-
 $ go get -u github.com/kamilsk/breaker
+
+$ dep ensure -add github.com/kamilsk/breaker
 ```
 
 ---
 
 made with ❤️ for everyone
 
-[icon_awesome]:    https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg
-[icon_build]:      https://travis-ci.org/kamilsk/breaker.svg?branch=master
-[icon_coverage]:   https://api.codeclimate.com/v1/badges/1d703de640b4c6cfcd6f/test_coverage
-[icon_docs]:       https://godoc.org/github.com/kamilsk/breaker?status.svg
-[icon_quality]:    https://goreportcard.com/badge/github.com/kamilsk/breaker
+[icon_awesome]:     https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg
+[icon_build]:       https://travis-ci.org/kamilsk/breaker.svg?branch=master
+[icon_coverage]:    https://api.codeclimate.com/v1/badges/1d703de640b4c6cfcd6f/test_coverage
+[icon_docs]:        https://godoc.org/github.com/kamilsk/breaker?status.svg
+[icon_quality]:     https://goreportcard.com/badge/github.com/kamilsk/breaker
 
-[page_awesome]:    https://github.com/avelino/awesome-go#goroutines
-[page_build]:      https://travis-ci.org/kamilsk/breaker
-[page_coverage]:   https://codeclimate.com/github/kamilsk/breaker/test_coverage
-[page_docs]:       https://godoc.org/github.com/kamilsk/breaker
-[page_quality]:    https://goreportcard.com/report/github.com/kamilsk/breaker
+[page_awesome]:     https://github.com/avelino/awesome-go#goroutines
+[page_build]:       https://travis-ci.org/kamilsk/breaker
+[page_coverage]:    https://codeclimate.com/github/kamilsk/breaker/test_coverage
+[page_docs]:        https://godoc.org/github.com/kamilsk/breaker
+[page_quality]:     https://goreportcard.com/report/github.com/kamilsk/breaker
 
-[dep]:             https://golang.github.io/dep/
-[gomod]:           https://github.com/golang/go/wiki/Modules
-[promo]:           https://github.com/kamilsk/breaker
-[retry]:           https://github.com/kamilsk/retry
-[semaphore]:       https://github.com/kamilsk/semaphore
+[design]:           https://www.notion.so/octolab/breaker-77116e98fda74c28bd64e42bd440bbf3?r=0b753cbf767346f5a6fd51194829a2f3
+[egg]:              https://github.com/kamilsk/egg
+[promo]:            https://github.com/kamilsk/breaker
+[retry]:            https://github.com/kamilsk/retry
+[semaphore]:        https://github.com/kamilsk/semaphore
+
+[tmp.docs]:         https://nicedoc.io/kamilsk/breaker?theme=dark
+[tmp.history]:      https://github.githistory.xyz/kamilsk/breaker/blob/master/README.md

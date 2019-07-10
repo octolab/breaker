@@ -47,4 +47,4 @@ sync:
 	@git stash && git pull --rebase && git stash pop || true
 
 .PHONY: upgrade
-upgrade: sync update deps format test-with-coverage
+upgrade: sync update deps refresh test-with-coverage
