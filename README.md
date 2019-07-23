@@ -60,15 +60,19 @@ import (
 	"github.com/kamilsk/breaker"
 )
 
+var NewYear = time.Time{}.AddDate(time.Now().Year(), 0, 0)
+
 func Handle(rw http.ResponseWriter, req *http.Request) {
-	ctx, cancel := context.WithTimeout(req.Context(), time.Second)
+	ctx, cancel := context.WithCancel(req.Context())
 	defer cancel()
 
 	deadline, _ := time.ParseDuration(req.Header.Get("X-Timeout"))
 	interrupter := breaker.Multiplex(
-		breaker.BreakByTimeout(deadline),
+		breaker.BreakByContext(context.WithTimeout(ctx, deadline)),
+		breaker.BreakByDeadline(NewYear),
 		breaker.BreakBySignal(os.Interrupt),
 	)
+	defer interrupter.Close()
 
 	buf, work := bytes.NewBuffer(nil), Work(ctx, struct{}{})
 	for {
