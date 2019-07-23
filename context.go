@@ -5,7 +5,14 @@ import (
 	"sync/atomic"
 )
 
+// BreakByContext returns a new Breaker based on the Context.
+func BreakByContext(ctx context.Context, cancel context.CancelFunc) Interface {
+	return (&contextBreaker{newBreaker(), cancel, ctx.Done()}).trigger()
+}
+
 // WithContext returns a new Breaker and an associated Context derived from ctx.
+// Deprecated: use BreakByContext instead.
+// TODO:v2 will be removed
 func WithContext(ctx context.Context) (Interface, context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	return (&contextBreaker{newBreaker(), cancel, ctx.Done()}).trigger(), ctx

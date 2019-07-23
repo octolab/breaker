@@ -14,7 +14,8 @@ The breaker carries a cancellation signal to interrupt an action execution.
 
 ```go
 interrupter := breaker.Multiplex(
-	breaker.BreakByTimeout(time.Minute),
+	breaker.BreakByContext(context.WithTimeout(req.Context(), time.Minute)),
+	breaker.BreakByDeadline(NewYear),
 	breaker.BreakBySignal(os.Interrupt),
 )
 defer interrupter.Close()
