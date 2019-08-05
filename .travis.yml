@@ -1,13 +1,24 @@
+sudo:     false
 language: go
+
+cache:
+  directories:
+  - $HOME/.cache/go-build
+  - $HOME/gopath/pkg/mod
 
 go:
 - master
 - 1.x
+- 1.7.x
+- 1.8.x
+- 1.9.x
 - 1.10.x
 - 1.11.x
 - 1.12.x
 
-sudo: false
+matrix:
+  allow_failures:
+  - go: 1.7.x
 
 before_install:
 - export CODECLIMATE=https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64
