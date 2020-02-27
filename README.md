@@ -2,11 +2,12 @@
 >
 > Flexible mechanism to make execution flow interruptible.
 
-[![Build][icon_build]][page_build]
-[![Quality][icon_quality]][page_quality]
-[![Documentation][icon_docs]][page_docs]
-[![Coverage][icon_coverage]][page_coverage]
-[![Awesome][icon_awesome]][page_awesome]
+[![Build][build.icon]][build.page]
+[![Documentation][docs.icon]][docs.page]
+[![Quality][quality.icon]][quality.page]
+[![Template][template.icon]][template.page]
+[![Coverage][coverage.icon]][coverage.page]
+[![Awesome][awesome.icon]][awesome.page]
 
 ## 💡 Idea
 
@@ -23,11 +24,11 @@ defer interrupter.Close()
 <-interrupter.Done() // wait context cancellation, timeout or interrupt signal
 ```
 
-Full description of the idea is available [here][design].
+Full description of the idea is available [here][design.page].
 
 ## 🏆 Motivation
 
-I have to make [github.com/kamilsk/retry][retry] package:
+I have to make [retry][] package:
 
 ```go
 if err := retry.Retry(breaker.BreakByTimeout(time.Minute), action); err != nil {
@@ -35,7 +36,7 @@ if err := retry.Retry(breaker.BreakByTimeout(time.Minute), action); err != nil {
 }
 ```
 
-and [github.com/kamilsk/semaphore][semaphore] package:
+and [semaphore][] package:
 
 ```go
 if err := semaphore.Acquire(breaker.BreakByTimeout(time.Minute), 5); err != nil {
@@ -106,34 +107,31 @@ func Work(ctx context.Context, _ struct{}) <-chan byte {
 
 The library uses [SemVer](https://semver.org) for versioning, and it is not
 [BC](https://en.wikipedia.org/wiki/Backward_compatibility)-safe through major releases.
-You can use [go modules](https://github.com/golang/go/wiki/Modules) or
-[dep](https://golang.github.io/dep/) to manage its version.
+You can use [go modules](https://github.com/golang/go/wiki/Modules) to manage its version.
 
 ```bash
-$ go get -u github.com/kamilsk/breaker
-
-$ dep ensure -add github.com/kamilsk/breaker
+$ go get github.com/kamilsk/breaker@latest
 ```
 
 ---
 
 made with ❤️ for everyone
 
-[icon_awesome]:     https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg
-[icon_build]:       https://travis-ci.org/kamilsk/breaker.svg?branch=master
-[icon_coverage]:    https://api.codeclimate.com/v1/badges/1d703de640b4c6cfcd6f/test_coverage
-[icon_docs]:        https://godoc.org/github.com/kamilsk/breaker?status.svg
-[icon_quality]:     https://goreportcard.com/badge/github.com/kamilsk/breaker
+[awesome.icon]:     https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg
+[awesome.page]:     https://github.com/avelino/awesome-go#goroutines
+[build.icon]:       https://travis-ci.org/kamilsk/breaker.svg?branch=master
+[build.page]:       https://travis-ci.org/kamilsk/breaker
+[coverage.icon]:    https://api.codeclimate.com/v1/badges/1d703de640b4c6cfcd6f/test_coverage
+[coverage.page]:    https://codeclimate.com/github/kamilsk/breaker/test_coverage
+[design.page]:      https://www.notion.so/octolab/breaker-77116e98fda74c28bd64e42bd440bbf3?r=0b753cbf767346f5a6fd51194829a2f3
+[docs.page]:        https://pkg.go.dev/github.com/kamilsk/breaker
+[docs.icon]:        https://img.shields.io/badge/docs-pkg.go.dev-blue
+[promo.page]:       https://github.com/kamilsk/breaker
+[quality.icon]:     https://goreportcard.com/badge/github.com/kamilsk/breaker
+[quality.page]:     https://goreportcard.com/report/github.com/kamilsk/breaker
+[template.page]:    https://github.com/octomation/go-module
+[template.icon]:    https://img.shields.io/badge/template-go--module-blue
 
-[page_awesome]:     https://github.com/avelino/awesome-go#goroutines
-[page_build]:       https://travis-ci.org/kamilsk/breaker
-[page_coverage]:    https://codeclimate.com/github/kamilsk/breaker/test_coverage
-[page_docs]:        https://godoc.org/github.com/kamilsk/breaker
-[page_quality]:     https://goreportcard.com/report/github.com/kamilsk/breaker
-
-[design]:           https://www.notion.so/octolab/breaker-77116e98fda74c28bd64e42bd440bbf3?r=0b753cbf767346f5a6fd51194829a2f3
-[egg]:              https://github.com/kamilsk/egg
-[promo]:            https://github.com/kamilsk/breaker
 [retry]:            https://github.com/kamilsk/retry
 [semaphore]:        https://github.com/kamilsk/semaphore
 
