@@ -7,7 +7,7 @@ import (
 
 // BreakByContext returns a new Breaker based on the Context.
 func BreakByContext(ctx context.Context, cancel context.CancelFunc) Interface {
-	return (&contextBreaker{newBreaker(), cancel, ctx.Done()}).trigger()
+	return (&contextBreaker{newBreaker(), cancel, ctx}).trigger()
 }
 
 // WithContext returns a new Breaker and an associated Context derived from ctx.
@@ -15,18 +15,13 @@ func BreakByContext(ctx context.Context, cancel context.CancelFunc) Interface {
 // TODO:v2 will be removed
 func WithContext(ctx context.Context) (Interface, context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
-	return (&contextBreaker{newBreaker(), cancel, ctx.Done()}).trigger(), ctx
+	return (&contextBreaker{newBreaker(), cancel, ctx}).trigger(), ctx
 }
 
 type contextBreaker struct {
 	*breaker
 	cancel context.CancelFunc
-	signal <-chan struct{}
-}
-
-// Done returns a channel that's closed when a cancellation signal occurred.
-func (br *contextBreaker) Done() <-chan struct{} {
-	return br.signal
+	ctx    context.Context
 }
 
 // Close closes the Done channel and releases resources associated with it.
@@ -34,9 +29,20 @@ func (br *contextBreaker) Close() {
 	br.cancel()
 }
 
+// Done returns a channel that's closed when a cancellation signal occurred.
+func (br *contextBreaker) Done() <-chan struct{} {
+	return br.ctx.Done()
+}
+
+// Err returns a non-nil error if Done is closed and nil otherwise.
+// After Err returns a non-nil error, successive calls to Err return the same error.
+func (br *contextBreaker) Err() error {
+	return br.ctx.Err()
+}
+
 func (br *contextBreaker) trigger() Interface {
 	go func() {
-		<-br.signal
+		<-br.ctx.Done()
 		atomic.StoreInt32(&br.released, 1)
 	}()
 	return br

@@ -50,17 +50,26 @@ type breaker struct {
 	released int32
 }
 
-// Done returns a channel that's closed when a cancellation signal occurred.
-func (br *breaker) Done() <-chan struct{} {
-	return br.signal
-}
-
 // Close closes the Done channel and releases resources associated with it.
 func (br *breaker) Close() {
 	br.closer.Do(func() {
 		close(br.signal)
 		atomic.StoreInt32(&br.released, 1)
 	})
+}
+
+// Done returns a channel that's closed when a cancellation signal occurred.
+func (br *breaker) Done() <-chan struct{} {
+	return br.signal
+}
+
+// Err returns a non-nil error if Done is closed and nil otherwise.
+// After Err returns a non-nil error, successive calls to Err return the same error.
+func (br *breaker) Err() error {
+	if atomic.LoadInt32(&br.released) == 1 {
+		return Interrupted
+	}
+	return nil
 }
 
 // Released returns true if resources associated with the Breaker were released.

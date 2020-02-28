@@ -15,10 +15,13 @@ package breaker
 //  }
 //
 type Interface interface {
-	// Done returns a channel that's closed when a cancellation signal occurred.
-	Done() <-chan struct{}
 	// Close closes the Done channel and releases resources associated with it.
 	Close()
+	// Done returns a channel that's closed when a cancellation signal occurred.
+	Done() <-chan struct{}
+	// Err returns a non-nil error if Done is closed and nil otherwise.
+	// After Err returns a non-nil error, successive calls to Err return the same error.
+	Err() error
 	// trigger is a private method to guarantee that the Breakers come from
 	// this package and all of them return a valid Done channel.
 	trigger() Interface
