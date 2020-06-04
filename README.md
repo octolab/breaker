@@ -24,7 +24,7 @@ defer interrupter.Close()
 <-interrupter.Done() // wait context cancellation, timeout or interrupt signal
 ```
 
-Full description of the idea is available [here][design.page].
+A full description of the idea is available [here][design.page].
 
 ## 🏆 Motivation
 

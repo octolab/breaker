@@ -1,17 +1,22 @@
 # sourced by https://github.com/octomation/makefiles
 
 .DEFAULT_GOAL = test-with-coverage
+GIT_HOOKS     = post-merge pre-commit
+GO_VERSIONS   = 1.11 1.12 1.13 1.14
 
-SHELL = /bin/bash -euo pipefail
+SHELL := /bin/bash -euo pipefail # `explain set -euo pipefail`
+
+OS   = $(shell uname -s | tr '[:upper:]' '[:lower:]')
+ARCH = $(shell uname -m | tr '[:upper:]' '[:lower:]')
 
 GO111MODULE = on
 GOFLAGS     = -mod=vendor
 GOPRIVATE   = go.octolab.net
 GOPROXY     = direct
 LOCAL       = $(MODULE)
-MODULE      = `go list -m`
-PACKAGES    = `go list ./... 2> /dev/null`
-PATHS       = $(shell echo $(PACKAGES) | sed -e "s|$(MODULE)/\{0,1\}||g")
+MODULE      = `GO111MODULE=on go list -m $(GOFLAGS)`
+PACKAGES    = `GO111MODULE=on go list $(GOFLAGS) ./...`
+PATHS       = $(shell echo $(PACKAGES) | sed -e "s|$(MODULE)/||g" | sed -e "s|$(MODULE)|$(PWD)/*.go|g")
 TIMEOUT     = 1s
 
 ifeq (, $(PACKAGES))
@@ -51,19 +56,19 @@ deps-check:
 deps-clean:
 	@go clean -modcache
 
-.PHONY: deps-shake
-deps-shake:
-	@go mod tidy
-	@if [[ "`go env GOFLAGS`" =~ -mod=vendor ]]; then go mod vendor; fi
-
-.PHONY: module-deps
-module-deps:
+.PHONY: deps-fetch
+deps-fetch:
 	@go mod download
 	@if [[ "`go env GOFLAGS`" =~ -mod=vendor ]]; then go mod vendor; fi
 
-.PHONY: update
-update: selector = '{{if not (or .Main .Indirect)}}{{.Path}}{{end}}'
-update:
+.PHONY: deps-tidy
+deps-tidy:
+	@go mod tidy
+	@if [[ "`go env GOFLAGS`" =~ -mod=vendor ]]; then go mod vendor; fi
+
+.PHONY: deps-update
+deps-update: selector = '{{if not (or .Main .Indirect)}}{{.Path}}{{end}}'
+deps-update:
 	@if command -v egg > /dev/null; then \
 		packages="`egg deps list`"; \
 	else \
@@ -76,8 +81,8 @@ update:
 	fi; \
 	if [[ "`go env GOFLAGS`" =~ -mod=vendor ]]; then go mod vendor; fi
 
-.PHONY: update-all
-update-all:
+.PHONY: deps-update-all
+deps-update-all:
 	@if [[ "`go version`" == *1.1[1-3]* ]]; then \
 		go get -d -mod= -u ./...; \
 	else \
@@ -85,8 +90,8 @@ update-all:
 	fi; \
 	if [[ "`go env GOFLAGS`" =~ -mod=vendor ]]; then go mod vendor; fi
 
-.PHONY: format
-format:
+.PHONY: go-fmt
+go-fmt:
 	@if command -v goimports > /dev/null; then \
 		goimports -local $(LOCAL) -ungroup -w $(PATHS); \
 	else \
@@ -121,10 +126,17 @@ test-with-coverage:
 test-with-coverage-profile:
 	@go test -cover -covermode count -coverprofile c.out -timeout $(TIMEOUT) $(PACKAGES)
 
+.PHONY: hooks
+hooks:
+	@ls .git/hooks | grep -v .sample | sed 's|.*|.git/hooks/&|' | xargs rm -f || true
+	@for hook in $(GIT_HOOKS); do cp githooks/$$hook .git/hooks/; done
+
+ifdef GO_VERSIONS
+
 define go_tpl
 .PHONY: go$(1)
 go$(1):
-	docker run \
+	@docker run \
 		--rm -it \
 		-v $(PWD):/src \
 		-w /src \
@@ -132,20 +144,31 @@ go$(1):
 endef
 
 render_go_tpl = $(eval $(call go_tpl,$(version)))
-$(foreach version,1.11 1.12 1.13 1.14,$(render_go_tpl))
+$(foreach version,$(GO_VERSIONS),$(render_go_tpl))
 
+endif
+
+
+.PHONY: init
+init: deps test lint hooks
 
 .PHONY: clean
 clean: deps-clean test-clean
 
 .PHONY: deps
-deps: module-deps
+deps: deps-fetch
 
 .PHONY: env
 env: go-env
+
+.PHONY: format
+format: go-fmt
 
 .PHONY: generate
 generate: go-generate format
 
 .PHONY: refresh
-refresh: deps-shake update deps generate format test
+refresh: deps-tidy update deps generate format test
+
+.PHONY: update
+update: deps-update
