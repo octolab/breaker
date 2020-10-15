@@ -1,4 +1,4 @@
-> # 🚧 breaker
+> # 🚧 breaker [![Awesome][awesome.icon]][awesome.page]
 >
 > Flexible mechanism to make execution flow interruptible.
 
@@ -8,7 +8,6 @@
 [![Template][template.icon]][template.page]
 [![Coverage][coverage.icon]][coverage.page]
 [![Mirror][mirror.icon]][mirror.page]
-[![Awesome][awesome.icon]][awesome.page]
 
 ## 💡 Idea
 
