@@ -34,7 +34,7 @@ before_script:
 script:
   - |
     if [[ $TRAVIS_GO_VERSION == 1.15* ]]; then
-      make test-with-coverage-profile
+      make test-with-coverage
     else
       make test
     fi

@@ -117,10 +117,8 @@ $ go get github.com/kamilsk/breaker@latest
 
 made with ❤️ for everyone
 
-[awesome.icon]:     https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg
-[awesome.page]:     https://github.com/avelino/awesome-go#goroutines
-[build.page]:       https://travis-ci.org/kamilsk/breaker
-[build.icon]:       https://travis-ci.org/kamilsk/breaker.svg?branch=master
+[build.page]:       https://travis-ci.com/kamilsk/breaker
+[build.icon]:       https://travis-ci.com/kamilsk/breaker.svg?branch=master
 [coverage.page]:    https://codeclimate.com/github/kamilsk/breaker/test_coverage
 [coverage.icon]:    https://api.codeclimate.com/v1/badges/1d703de640b4c6cfcd6f/test_coverage
 [design.page]:      https://www.notion.so/octolab/breaker-77116e98fda74c28bd64e42bd440bbf3?r=0b753cbf767346f5a6fd51194829a2f3
@@ -133,6 +131,9 @@ made with ❤️ for everyone
 [template.icon]:    https://img.shields.io/badge/template-go--module-blue
 [mirror.page]:      https://bitbucket.org/kamilsk/breaker
 [mirror.icon]:      https://img.shields.io/badge/mirror-bitbucket-blue
+
+[awesome.icon]:     https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg
+[awesome.page]:     https://github.com/avelino/awesome-go#goroutines
 
 [retry]:            https://github.com/kamilsk/retry
 [semaphore]:        https://github.com/kamilsk/semaphore
