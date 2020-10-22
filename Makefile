@@ -20,7 +20,7 @@ todo:
 .PHONY: todo
 
 GO111MODULE ?= on
-GOFLAGS     ?= -mod=vendor
+GOFLAGS     ?= -mod=
 GOPRIVATE   ?= go.octolab.net
 GOPROXY     ?= direct
 LOCAL       ?= $(MODULE)
@@ -117,6 +117,13 @@ lint:
 	@looppointer ./...
 .PHONY: lint
 
+GODOC_HOST ?= localhost:6060
+
+docs:
+	@(sleep 2 && open http://$(GODOC_HOST)/pkg/$(LOCAL)/) &
+	@godoc -http=$(GODOC_HOST)
+.PHONY: docs
+
 test:
 	@go test -race -timeout $(TIMEOUT) $(PACKAGES)
 .PHONY: test
@@ -124,6 +131,10 @@ test:
 test-clean:
 	@go clean -testcache
 .PHONY: test-clean
+
+test-quick:
+	@go test -timeout $(TIMEOUT) $(PACKAGES)
+.PHONY: test-quick
 
 test-with-coverage:
 	@go test \
@@ -145,9 +156,13 @@ test-integration:
 		-covermode atomic \
 		-coverprofile integration.out \
 		-race \
-		-tags=integration \
+		-tags integration \
 		./... | column -t | sort -r
 .PHONY: test-integration
+
+test-integration-quick:
+	@go test -tags integration ./...
+.PHONY: test-integration-quick
 
 test-integration-report: test-integration
 	@go tool cover -html integration.out
