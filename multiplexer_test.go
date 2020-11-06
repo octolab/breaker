@@ -18,6 +18,7 @@ func TestMultiplex(t *testing.T) {
 		checkDuration(t, start.Add(5*delta), time.Now())
 		checkBreakerIsReleased(t, br)
 	})
+
 	t.Run("without breakers", func(t *testing.T) {
 		br := Multiplex()
 		start := time.Now()
@@ -26,6 +27,7 @@ func TestMultiplex(t *testing.T) {
 		checkDuration(t, start, time.Now())
 		checkBreakerIsReleased(t, br)
 	})
+
 	t.Run("close multiple times", func(t *testing.T) {
 		br := Multiplex(BreakByTimeout(time.Hour))
 		br.Close()

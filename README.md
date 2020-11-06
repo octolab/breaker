@@ -132,8 +132,8 @@ made with ❤️ for everyone
 [mirror.page]:      https://bitbucket.org/kamilsk/breaker
 [mirror.icon]:      https://img.shields.io/badge/mirror-bitbucket-blue
 
-[awesome.icon]:     https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg
 [awesome.page]:     https://github.com/avelino/awesome-go#goroutines
+[awesome.icon]:     https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg
 
 [retry]:            https://github.com/kamilsk/retry
 [semaphore]:        https://github.com/kamilsk/semaphore

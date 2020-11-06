@@ -17,6 +17,7 @@ func TestBreakByContext(t *testing.T) {
 		checkDuration(t, start.Add(5*delta), time.Now())
 		checkBreakerIsReleased(t, br)
 	})
+
 	t.Run("closed breaker", func(t *testing.T) {
 		br := BreakByContext(context.WithTimeout(context.Background(), -delta))
 		start := time.Now()
@@ -25,6 +26,7 @@ func TestBreakByContext(t *testing.T) {
 		checkDuration(t, start, time.Now())
 		checkBreakerIsReleased(t, br)
 	})
+
 	t.Run("released breaker", func(t *testing.T) {
 		br := BreakByContext(context.WithTimeout(context.Background(), time.Hour))
 		br.Close()
@@ -34,6 +36,7 @@ func TestBreakByContext(t *testing.T) {
 		checkDuration(t, start, time.Now())
 		checkBreakerIsReleased(t, br)
 	})
+
 	t.Run("canceled context", func(t *testing.T) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), time.Hour)
@@ -61,6 +64,7 @@ func TestWithContext(t *testing.T) {
 		checkDuration(t, start.Add(5*delta), time.Now())
 		checkBreakerIsReleased(t, br)
 	})
+
 	t.Run("closed breaker", func(t *testing.T) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), -delta)
@@ -73,6 +77,7 @@ func TestWithContext(t *testing.T) {
 		checkDuration(t, start, time.Now())
 		checkBreakerIsReleased(t, br)
 	})
+
 	t.Run("released breaker", func(t *testing.T) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), time.Hour)
@@ -86,6 +91,7 @@ func TestWithContext(t *testing.T) {
 		checkDuration(t, start, time.Now())
 		checkBreakerIsReleased(t, br)
 	})
+
 	t.Run("canceled context", func(t *testing.T) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), time.Hour)

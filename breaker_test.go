@@ -19,6 +19,7 @@ func TestBreakByDeadline(t *testing.T) {
 		checkDuration(t, start.Add(5*delta), time.Now())
 		checkBreakerIsReleased(t, br)
 	})
+
 	t.Run("passed deadline", func(t *testing.T) {
 		br := BreakByDeadline(time.Now().Add(-delta))
 		start := time.Now()
@@ -27,6 +28,7 @@ func TestBreakByDeadline(t *testing.T) {
 		checkDuration(t, start, time.Now())
 		checkBreakerIsReleased(t, br)
 	})
+
 	t.Run("close multiple times", func(t *testing.T) {
 		br := BreakByDeadline(time.Now().Add(time.Hour))
 		br.Close()
@@ -63,6 +65,7 @@ func TestBreakBySignal(t *testing.T) {
 		checkDuration(t, start, time.Now())
 		checkBreakerIsReleased(t, br)
 	})
+
 	t.Run("without signal", func(t *testing.T) {
 		br := BreakBySignal()
 		start := time.Now()
@@ -71,6 +74,7 @@ func TestBreakBySignal(t *testing.T) {
 		checkDuration(t, start, time.Now())
 		checkBreakerIsReleased(t, br)
 	})
+
 	t.Run("close multiple times", func(t *testing.T) {
 		br := BreakBySignal(os.Kill)
 		br.Close()
@@ -92,6 +96,7 @@ func TestBreakByTimeout(t *testing.T) {
 		checkDuration(t, start.Add(5*delta), time.Now())
 		checkBreakerIsReleased(t, br)
 	})
+
 	t.Run("passed timeout", func(t *testing.T) {
 		br := BreakByTimeout(-delta)
 		start := time.Now()
@@ -100,6 +105,7 @@ func TestBreakByTimeout(t *testing.T) {
 		checkDuration(t, start, time.Now())
 		checkBreakerIsReleased(t, br)
 	})
+
 	t.Run("close multiple times", func(t *testing.T) {
 		br := BreakByTimeout(time.Hour)
 		br.Close()
