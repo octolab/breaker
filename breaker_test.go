@@ -11,56 +11,75 @@ import (
 	. "github.com/kamilsk/breaker"
 )
 
-func TestBreakByContext(t *testing.T) {
-	t.Run("active breaker", func(t *testing.T) {
-		br := BreakByContext(context.WithTimeout(context.Background(), 5*delta))
-		if isReleased(br) {
-			t.Error("a breaker is released")
-		}
+func TestNew(t *testing.T) {
+	br := New()
+	checkBreakerIsNotReleased(t, br)
 
-		start := time.Now()
-		<-br.Done()
+	br.Close()
+	checkBreakerIsReleasedFast(t, br)
+}
 
-		checkDuration(t, start.Add(5*delta), time.Now())
-		checkBreakerIsReleased(t, br)
-	})
+func TestBreakByChannel(t *testing.T) {
+	t.Run("release breaker", func(t *testing.T) {
+		ch := make(chan struct{})
+		br := BreakByChannel(ch)
+		checkBreakerIsNotReleased(t, br)
 
-	t.Run("closed breaker", func(t *testing.T) {
-		br := BreakByContext(context.WithTimeout(context.Background(), -delta))
-		start := time.Now()
-		<-br.Done()
-
-		checkDuration(t, start, time.Now())
-		checkBreakerIsReleased(t, br)
-	})
-
-	t.Run("released breaker", func(t *testing.T) {
-		br := BreakByContext(context.WithTimeout(context.Background(), time.Hour))
 		br.Close()
-		start := time.Now()
-		<-br.Done()
-
-		checkDuration(t, start, time.Now())
 		checkBreakerIsReleased(t, br)
 	})
 
-	t.Run("canceled context", func(t *testing.T) {
+	t.Run("close channel", func(t *testing.T) {
+		ch := make(chan struct{})
+		br := BreakByChannel(ch)
+		checkBreakerIsNotReleased(t, br)
+
+		close(ch)
+		checkBreakerIsReleased(t, br)
+	})
+}
+
+func TestBreakByContext(t *testing.T) {
+	t.Run("propagate timeout", func(t *testing.T) {
+		timeout := 5 * delta
+		br := BreakByContext(context.WithTimeout(context.Background(), timeout))
+
+		start := time.Now()
+		<-br.Done()
+
+		checkDuration(t, start.Add(timeout), time.Now())
+		checkBreakerIsReleasedFast(t, br)
+	})
+
+	t.Run("deadline has already passed", func(t *testing.T) {
+		br := BreakByContext(context.WithTimeout(context.Background(), -delta))
+		checkBreakerIsReleasedFast(t, br)
+	})
+
+	t.Run("release breaker", func(t *testing.T) {
+		br := BreakByContext(context.WithTimeout(context.Background(), time.Hour))
+		checkBreakerIsNotReleased(t, br)
+
+		br.Close()
+		checkBreakerIsReleasedFast(t, br)
+	})
+
+	t.Run("cancel context", func(t *testing.T) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), time.Hour)
 			br          = BreakByContext(ctx, cancel)
 		)
-		cancel()
-		start := time.Now()
-		<-br.Done()
+		checkBreakerIsNotReleased(t, br)
 
-		checkDuration(t, start, time.Now())
-		checkBreakerIsReleased(t, br)
+		cancel()
+		checkBreakerIsReleasedFast(t, br)
 	})
 }
 
 func TestBreakByDeadline(t *testing.T) {
 	t.Run("future deadline", func(t *testing.T) {
 		br := BreakByDeadline(time.Now().Add(5 * delta))
+
 		start := time.Now()
 		<-br.Done()
 
@@ -70,6 +89,7 @@ func TestBreakByDeadline(t *testing.T) {
 
 	t.Run("passed deadline", func(t *testing.T) {
 		br := BreakByDeadline(time.Now().Add(-delta))
+
 		start := time.Now()
 		<-br.Done()
 
@@ -81,6 +101,7 @@ func TestBreakByDeadline(t *testing.T) {
 		br := BreakByDeadline(time.Now().Add(time.Hour))
 		br.Close()
 		br.Close()
+
 		start := time.Now()
 		<-br.Done()
 
@@ -92,6 +113,7 @@ func TestBreakByDeadline(t *testing.T) {
 func TestBreakBySignal(t *testing.T) {
 	t.Run("with signal", func(t *testing.T) {
 		br := BreakBySignal(syscall.SIGCHLD)
+
 		start := time.Now()
 		go func() {
 			proc, err := os.FindProcess(os.Getpid())
@@ -116,6 +138,7 @@ func TestBreakBySignal(t *testing.T) {
 
 	t.Run("without signal", func(t *testing.T) {
 		br := BreakBySignal()
+
 		start := time.Now()
 		<-br.Done()
 
@@ -127,6 +150,7 @@ func TestBreakBySignal(t *testing.T) {
 		br := BreakBySignal(os.Kill)
 		br.Close()
 		br.Close()
+
 		start := time.Now()
 		<-br.Done()
 
@@ -138,6 +162,7 @@ func TestBreakBySignal(t *testing.T) {
 func TestBreakByTimeout(t *testing.T) {
 	t.Run("valid timeout", func(t *testing.T) {
 		br := BreakByTimeout(5 * delta)
+
 		start := time.Now()
 		<-br.Done()
 
@@ -147,6 +172,7 @@ func TestBreakByTimeout(t *testing.T) {
 
 	t.Run("passed timeout", func(t *testing.T) {
 		br := BreakByTimeout(-delta)
+
 		start := time.Now()
 		<-br.Done()
 
@@ -158,6 +184,7 @@ func TestBreakByTimeout(t *testing.T) {
 		br := BreakByTimeout(time.Hour)
 		br.Close()
 		br.Close()
+
 		start := time.Now()
 		<-br.Done()
 

@@ -10,6 +10,16 @@ import (
 	"time"
 )
 
+// New returns a new Breaker which can interrupted only by the Close call.
+func New() Interface {
+	return newBreaker().trigger()
+}
+
+// BreakByChannel returns a new Breaker based on the channel.
+func BreakByChannel(ch <-chan struct{}) Interface {
+	return (&channelBreaker{newBreaker(), ch}).trigger()
+}
+
 // BreakByContext returns a new Breaker based on the Context.
 //
 //  interrupter := breaker.BreakByContext(context.WithTimeout(req.Context(), time.Minute)),
@@ -18,7 +28,7 @@ import (
 //  background.Job().Do(interrupter)
 //
 func BreakByContext(ctx context.Context, cancel context.CancelFunc) Interface {
-	return (&contextBreaker{ctx, cancel}).trigger()
+	return &contextBreaker{ctx, cancel}
 }
 
 // BreakByDeadline closes the Done channel when the deadline occurs.
@@ -49,7 +59,7 @@ func BreakByTimeout(timeout time.Duration) Interface {
 func closedBreaker() Interface {
 	br := newBreaker()
 	br.Close()
-	return br.trigger()
+	return br
 }
 
 func newBreaker() *breaker {
@@ -75,7 +85,7 @@ func (br *breaker) Done() <-chan struct{} {
 	return br.signal
 }
 
-// Err returns a non-nil error if Done is closed and nil otherwise.
+// Err returns a non-nil error if the Done channel is closed and nil otherwise.
 // After Err returns a non-nil error, successive calls to Err return the same error.
 func (br *breaker) Err() error {
 	if atomic.LoadInt32(&br.released) == 1 {
@@ -90,6 +100,33 @@ func (br *breaker) Released() bool {
 }
 
 func (br *breaker) trigger() Interface {
+	return br
+}
+
+type channelBreaker struct {
+	*breaker
+	relay <-chan struct{}
+}
+
+// Close closes the Done channel and releases resources associated with it.
+func (br *channelBreaker) Close() {
+	br.closer.Do(func() {
+		close(br.signal)
+	})
+}
+
+// trigger starts listening internal signal to close the Done channel.
+func (br *channelBreaker) trigger() Interface {
+	go func() {
+		select {
+		case <-br.relay:
+		case <-br.signal:
+		}
+		br.Close()
+
+		// the goroutine is done
+		atomic.StoreInt32(&br.released, 1)
+	}()
 	return br
 }
 
@@ -117,7 +154,7 @@ func (br *contextBreaker) trigger() Interface {
 	return br
 }
 
-func newSignaledBreaker(signals []os.Signal) Interface {
+func newSignaledBreaker(signals []os.Signal) *signaledBreaker {
 	return &signaledBreaker{newBreaker(), make(chan os.Signal, len(signals)), signals}
 }
 
@@ -144,12 +181,14 @@ func (br *signaledBreaker) trigger() Interface {
 		case <-br.signal:
 		}
 		br.Close()
+
+		// the goroutine is done
 		atomic.StoreInt32(&br.released, 1)
 	}()
 	return br
 }
 
-func newTimedBreaker(timeout time.Duration) Interface {
+func newTimedBreaker(timeout time.Duration) *timedBreaker {
 	return &timedBreaker{newBreaker(), time.NewTimer(timeout)}
 }
 
@@ -174,6 +213,8 @@ func (br *timedBreaker) trigger() Interface {
 		case <-br.signal:
 		}
 		br.Close()
+
+		// the goroutine is done
 		atomic.StoreInt32(&br.released, 1)
 	}()
 	return br
