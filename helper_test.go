@@ -13,7 +13,7 @@ func checkBreakerIsReleased(tb testing.TB, br Interface) {
 	tb.Helper()
 
 	time.Sleep(delta)
-	if check, is := br.(interface{ Released() bool }); !is || !check.Released() {
+	if !isReleased(br) {
 		tb.Error("a breaker is not released")
 	}
 }
@@ -25,4 +25,9 @@ func checkDuration(tb testing.TB, expected, actual time.Time) {
 	if dt < -delta || dt > delta {
 		tb.Errorf("max difference between %v and %v allowed is %v, but difference was %v", expected, actual, delta, dt)
 	}
+}
+
+func isReleased(br Interface) bool {
+	check, is := br.(interface{ Released() bool })
+	return is && check.Released()
 }

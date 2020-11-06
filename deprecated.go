@@ -7,5 +7,5 @@ import "context"
 // TODO:v2 will be removed
 func WithContext(ctx context.Context) (Interface, context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
-	return (&contextBreaker{newBreaker(), cancel, ctx}).trigger(), ctx
+	return (&contextBreaker{ctx, cancel}).trigger(), ctx
 }

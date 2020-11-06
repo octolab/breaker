@@ -11,6 +11,10 @@ import (
 func TestBreakByContext(t *testing.T) {
 	t.Run("active breaker", func(t *testing.T) {
 		br := BreakByContext(context.WithTimeout(context.Background(), 5*delta))
+		if isReleased(br) {
+			t.Error("a breaker is released")
+		}
+
 		start := time.Now()
 		<-br.Done()
 

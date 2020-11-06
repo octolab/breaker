@@ -14,6 +14,8 @@
 The breaker carries a cancellation signal to interrupt an action execution.
 
 ```go
+var NewYear = time.Time{}.AddDate(time.Now().Year(), 0, 0)
+
 interrupter := breaker.Multiplex(
 	breaker.BreakByContext(context.WithTimeout(req.Context(), time.Minute)),
 	breaker.BreakByDeadline(NewYear),
