@@ -11,7 +11,7 @@ import (
 func TestWithContext(t *testing.T) {
 	t.Run("active breaker", func(t *testing.T) {
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), 5*delta)
+			ctx, cancel = context.WithTimeout(context.TODO(), 5*delta)
 			br, _       = WithContext(ctx)
 		)
 		defer cancel()
@@ -24,7 +24,7 @@ func TestWithContext(t *testing.T) {
 
 	t.Run("closed breaker", func(t *testing.T) {
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), -delta)
+			ctx, cancel = context.WithTimeout(context.TODO(), -delta)
 			br, _       = WithContext(ctx)
 		)
 		defer cancel()
@@ -37,7 +37,7 @@ func TestWithContext(t *testing.T) {
 
 	t.Run("released breaker", func(t *testing.T) {
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), time.Hour)
+			ctx, cancel = context.WithTimeout(context.TODO(), time.Hour)
 			br, _       = WithContext(ctx)
 		)
 		defer cancel()
@@ -51,7 +51,7 @@ func TestWithContext(t *testing.T) {
 
 	t.Run("canceled context", func(t *testing.T) {
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), time.Hour)
+			ctx, cancel = context.WithTimeout(context.TODO(), time.Hour)
 			br, _       = WithContext(ctx)
 		)
 		cancel()

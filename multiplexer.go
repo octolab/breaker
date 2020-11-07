@@ -64,7 +64,10 @@ func (br *multiplexedBreaker) trigger() Interface {
 	go func() {
 		brs := make([]reflect.SelectCase, 0, len(br.entries))
 		for _, br := range br.entries {
-			brs = append(brs, reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(br.Done())})
+			brs = append(brs, reflect.SelectCase{
+				Dir:  reflect.SelectRecv,
+				Chan: reflect.ValueOf(br.Done()),
+			})
 		}
 		reflect.Select(brs)
 		br.Close()

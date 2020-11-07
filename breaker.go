@@ -56,6 +56,16 @@ func BreakByTimeout(timeout time.Duration) Interface {
 	return newTimedBreaker(timeout).trigger()
 }
 
+// ToContext converts the Breaker into the Context.
+func ToContext(br Interface) context.Context {
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		<-br.Done()
+		cancel()
+	}()
+	return ctx
+}
+
 func closedBreaker() Interface {
 	br := newBreaker()
 	br.Close()
@@ -94,8 +104,8 @@ func (br *breaker) Err() error {
 	return nil
 }
 
-// Released returns true if resources associated with the Breaker were released.
-func (br *breaker) Released() bool {
+// IsReleased returns true if resources associated with the Breaker were released.
+func (br *breaker) IsReleased() bool {
 	return atomic.LoadInt32(&br.released) == 1
 }
 
@@ -140,8 +150,8 @@ func (br *contextBreaker) Close() {
 	br.cancel()
 }
 
-// Released returns true if resources associated with the Breaker were released.
-func (br *contextBreaker) Released() bool {
+// IsReleased returns true if resources associated with the Breaker were released.
+func (br *contextBreaker) IsReleased() bool {
 	select {
 	case <-br.Done():
 		return true
@@ -154,18 +164,18 @@ func (br *contextBreaker) trigger() Interface {
 	return br
 }
 
-func newSignaledBreaker(signals []os.Signal) *signaledBreaker {
-	return &signaledBreaker{newBreaker(), make(chan os.Signal, len(signals)), signals}
+func newSignaledBreaker(signals []os.Signal) *signalBreaker {
+	return &signalBreaker{newBreaker(), make(chan os.Signal, len(signals)), signals}
 }
 
-type signaledBreaker struct {
+type signalBreaker struct {
 	*breaker
 	relay   chan os.Signal
 	signals []os.Signal
 }
 
 // Close closes the Done channel and releases resources associated with it.
-func (br *signaledBreaker) Close() {
+func (br *signalBreaker) Close() {
 	br.closer.Do(func() {
 		signal.Stop(br.relay)
 		close(br.signal)
@@ -173,7 +183,7 @@ func (br *signaledBreaker) Close() {
 }
 
 // trigger starts listening required signals to close the Done channel.
-func (br *signaledBreaker) trigger() Interface {
+func (br *signalBreaker) trigger() Interface {
 	go func() {
 		signal.Notify(br.relay, br.signals...)
 		select {
@@ -188,17 +198,17 @@ func (br *signaledBreaker) trigger() Interface {
 	return br
 }
 
-func newTimedBreaker(timeout time.Duration) *timedBreaker {
-	return &timedBreaker{newBreaker(), time.NewTimer(timeout)}
+func newTimedBreaker(timeout time.Duration) *timeoutBreaker {
+	return &timeoutBreaker{newBreaker(), time.NewTimer(timeout)}
 }
 
-type timedBreaker struct {
+type timeoutBreaker struct {
 	*breaker
 	*time.Timer
 }
 
 // Close closes the Done channel and releases resources associated with it.
-func (br *timedBreaker) Close() {
+func (br *timeoutBreaker) Close() {
 	br.closer.Do(func() {
 		stop(br.Timer)
 		close(br.signal)
@@ -206,7 +216,7 @@ func (br *timedBreaker) Close() {
 }
 
 // trigger starts listening internal timer to close the Done channel.
-func (br *timedBreaker) trigger() Interface {
+func (br *timeoutBreaker) trigger() Interface {
 	go func() {
 		select {
 		case <-br.Timer.C:

@@ -26,10 +26,10 @@ func Example() {
 
 	fmt.Println("status:", http.StatusText(rec.Result().StatusCode))
 	fmt.Printf("body: ")
-	_, _ = io.Copy(os.Stdout, strings.NewReader(truncate(rec.Body.String(), 28)))
+	_, _ = io.Copy(os.Stdout, strings.NewReader(truncate(rec.Body.String(), 20)))
 	// Output:
 	// status: Partial Content
-	// body: breaker 🚧 Flexible mechanism
+	// body: 🚧 Flexible mechanism
 }
 
 func Handle(rw http.ResponseWriter, req *http.Request) {
@@ -68,7 +68,7 @@ func Work(ctx context.Context, _ struct{}) <-chan byte {
 
 	go func() {
 		defer close(outcome)
-		for _, b := range []byte("breaker 🚧 Flexible mechanism to make execution flow interruptible.") {
+		for _, b := range []byte("🚧 Flexible mechanism to make execution flow interruptible.") {
 			time.Sleep(time.Millisecond)
 			select {
 			case <-ctx.Done():

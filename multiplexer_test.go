@@ -10,7 +10,10 @@ import (
 
 func TestMultiplex(t *testing.T) {
 	t.Run("with breakers", func(t *testing.T) {
-		br := Multiplex(BreakByTimeout(5*delta), BreakByDeadline(time.Now().Add(time.Hour)))
+		br := Multiplex(
+			BreakByTimeout(5*delta),
+			BreakByDeadline(time.Now().Add(time.Hour)),
+		)
 		defer br.Close()
 		start := time.Now()
 		<-br.Done()

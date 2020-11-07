@@ -46,11 +46,15 @@ func checkDuration(tb testing.TB, expected, actual time.Time) {
 	tb.Helper()
 
 	if dt := expected.Sub(actual); dt < -delta || dt > delta {
-		tb.Errorf("max difference between %v and %v allowed is %v, but difference was %v", expected, actual, delta, dt)
+		tb.Errorf(
+			"max difference between %v and %v allowed is %v, but difference was %v",
+			expected, actual, delta, dt,
+		)
 	}
 }
 
+// The trigger method guarantees that all implementations in under control
+// and the IsReleased call is safe.
 func isReleased(br Interface) bool {
-	check, is := br.(interface{ Released() bool })
-	return is && check.Released()
+	return br.(interface{ IsReleased() bool }).IsReleased()
 }

@@ -42,7 +42,7 @@ func TestBreakByChannel(t *testing.T) {
 func TestBreakByContext(t *testing.T) {
 	t.Run("propagate timeout", func(t *testing.T) {
 		timeout := 5 * delta
-		br := BreakByContext(context.WithTimeout(context.Background(), timeout))
+		br := BreakByContext(context.WithTimeout(context.TODO(), timeout))
 
 		start := time.Now()
 		<-br.Done()
@@ -52,12 +52,12 @@ func TestBreakByContext(t *testing.T) {
 	})
 
 	t.Run("deadline has already passed", func(t *testing.T) {
-		br := BreakByContext(context.WithTimeout(context.Background(), -delta))
+		br := BreakByContext(context.WithTimeout(context.TODO(), -delta))
 		checkBreakerIsReleasedFast(t, br)
 	})
 
 	t.Run("release breaker", func(t *testing.T) {
-		br := BreakByContext(context.WithTimeout(context.Background(), time.Hour))
+		br := BreakByContext(context.WithTimeout(context.TODO(), time.Hour))
 		checkBreakerIsNotReleased(t, br)
 
 		br.Close()
@@ -66,7 +66,7 @@ func TestBreakByContext(t *testing.T) {
 
 	t.Run("cancel context", func(t *testing.T) {
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), time.Hour)
+			ctx, cancel = context.WithTimeout(context.TODO(), time.Hour)
 			br          = BreakByContext(ctx, cancel)
 		)
 		checkBreakerIsNotReleased(t, br)
@@ -191,4 +191,21 @@ func TestBreakByTimeout(t *testing.T) {
 		checkDuration(t, start, time.Now())
 		checkBreakerIsReleased(t, br)
 	})
+}
+
+func TestToContext(t *testing.T) {
+	br := BreakByTimeout(time.Hour)
+
+	ctx := ToContext(br)
+	if ctx.Done() == nil {
+		t.Error("bad context")
+	}
+	if ctx.Err() != nil {
+		t.Error("bad context")
+	}
+
+	br.Close()
+	if time.Sleep(delta); ctx.Err() == nil {
+		t.Error("invalid behavior")
+	}
 }
