@@ -200,7 +200,7 @@ type timedBreaker struct {
 // Close closes the Done channel and releases resources associated with it.
 func (br *timedBreaker) Close() {
 	br.closer.Do(func() {
-		br.Timer.Stop()
+		stop(br.Timer)
 		close(br.signal)
 	})
 }
@@ -218,4 +218,13 @@ func (br *timedBreaker) trigger() Interface {
 		atomic.StoreInt32(&br.released, 1)
 	}()
 	return br
+}
+
+func stop(timer *time.Timer) {
+	if !timer.Stop() {
+		select {
+		case <-timer.C:
+		default:
+		}
+	}
 }
