@@ -144,6 +144,10 @@ test-quick:
 	@go test -timeout $(TIMEOUT) $(PACKAGES)
 .PHONY: test-quick
 
+test-verbose:
+	@go test -race -timeout $(TIMEOUT) -v $(PACKAGES)
+.PHONY: test-verbose
+
 test-with-coverage:
 	@go test \
 		-cover \

@@ -10,53 +10,104 @@ import (
 	"time"
 )
 
-// New returns a new Breaker which can interrupted only by the Close call.
+// New returns a new breaker, which can be interrupted only by a Close call.
+//
+//  interrupter := breaker.New()
+//  go background.Job().Do(interrupter)
+//
+//  <-time.After(time.Minute)
+//  interrupter.Close()
+//
 func New() Interface {
 	return newBreaker().trigger()
 }
 
-// BreakByChannel returns a new Breaker based on the channel.
-func BreakByChannel(ch <-chan struct{}) Interface {
-	return (&channelBreaker{newBreaker(), ch}).trigger()
+// BreakByChannel returns a new breaker based on the channel.
+//
+//  signal := make(chan struct{})
+//  go func() {
+//  	<-time.After(time.Minute)
+//  	close(signal)
+//  }()
+//
+//  interrupter := breaker.BreakByChannel(signal)
+//  defer interrupter.Close()
+//
+//  background.Job().Do(interrupter)
+//
+func BreakByChannel(signal <-chan struct{}) Interface {
+	return (&channelBreaker{newBreaker(), signal}).trigger()
 }
 
-// BreakByContext returns a new Breaker based on the Context.
+// BreakByContext returns a new breaker based on the Context.
 //
-//  interrupter := breaker.BreakByContext(context.WithTimeout(req.Context(), time.Minute)),
+//  interrupter := breaker.BreakByContext(context.WithTimeout(req.Context(), time.Minute))
 //  defer interrupter.Close()
 //
 //  background.Job().Do(interrupter)
 //
 func BreakByContext(ctx context.Context, cancel context.CancelFunc) Interface {
-	return &contextBreaker{ctx, cancel}
+	return (&contextBreaker{ctx, cancel}).trigger()
 }
 
 // BreakByDeadline closes the Done channel when the deadline occurs.
+//
+//  interrupter := breaker.BreakByDeadline(time.Now().Add(time.Minute))
+//  defer interrupter.Close()
+//
+//  background.Job().Do(interrupter)
+//
 func BreakByDeadline(deadline time.Time) Interface {
 	timeout := time.Until(deadline)
 	if timeout < 0 {
 		return closedBreaker()
 	}
-	return newTimedBreaker(timeout).trigger()
+	return newTimeoutBreaker(timeout).trigger()
 }
 
-// BreakBySignal closes the Done channel when signals will be received.
+// BreakBySignal closes the Done channel when the breaker will receive OS signals.
+//
+//  interrupter := breaker.BreakBySignal(os.Interrupt)
+//  defer interrupter.Close()
+//
+//  background.Job().Do(interrupter)
+//
 func BreakBySignal(sig ...os.Signal) Interface {
 	if len(sig) == 0 {
 		return closedBreaker()
 	}
-	return newSignaledBreaker(sig).trigger()
+	return newSignalBreaker(sig).trigger()
 }
 
 // BreakByTimeout closes the Done channel when the timeout happens.
+//
+//  interrupter := breaker.BreakByTimeout(time.Minute)
+//  defer interrupter.Close()
+//
+//  background.Job().Do(interrupter)
+//
 func BreakByTimeout(timeout time.Duration) Interface {
 	if timeout < 0 {
 		return closedBreaker()
 	}
-	return newTimedBreaker(timeout).trigger()
+	return newTimeoutBreaker(timeout).trigger()
 }
 
-// ToContext converts the Breaker into the Context.
+// ToContext converts the breaker into the Context.
+//
+//  interrupter := breaker.Multiplex(
+//  	breaker.BreakBySignal(os.Interrupt),
+//  	breaker.BreakByTimeout(time.Minute),
+//  )
+//  defer interrupter.Close()
+//
+//  request, err := http.NewRequestWithContext(breaker.ToContext(interrupter), ...)
+//  if err != nil { handle(err) }
+//
+//  response, err := http.DefaultClient.Do(request)
+//  if err != nil { handle(err) }
+//  handle(response)
+//
 func ToContext(br Interface) context.Context {
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
@@ -104,7 +155,7 @@ func (br *breaker) Err() error {
 	return nil
 }
 
-// IsReleased returns true if resources associated with the Breaker were released.
+// IsReleased returns true if resources associated with the breaker were released.
 func (br *breaker) IsReleased() bool {
 	return atomic.LoadInt32(&br.released) == 1
 }
@@ -125,7 +176,7 @@ func (br *channelBreaker) Close() {
 	})
 }
 
-// trigger starts listening internal signal to close the Done channel.
+// trigger starts listening to the internal signal to close the Done channel.
 func (br *channelBreaker) trigger() Interface {
 	go func() {
 		select {
@@ -150,7 +201,7 @@ func (br *contextBreaker) Close() {
 	br.cancel()
 }
 
-// IsReleased returns true if resources associated with the Breaker were released.
+// IsReleased returns true if resources associated with the breaker were released.
 func (br *contextBreaker) IsReleased() bool {
 	select {
 	case <-br.Done():
@@ -164,7 +215,7 @@ func (br *contextBreaker) trigger() Interface {
 	return br
 }
 
-func newSignaledBreaker(signals []os.Signal) *signalBreaker {
+func newSignalBreaker(signals []os.Signal) *signalBreaker {
 	return &signalBreaker{newBreaker(), make(chan os.Signal, len(signals)), signals}
 }
 
@@ -182,7 +233,7 @@ func (br *signalBreaker) Close() {
 	})
 }
 
-// trigger starts listening required signals to close the Done channel.
+// trigger starts listening to the required signals to close the Done channel.
 func (br *signalBreaker) trigger() Interface {
 	go func() {
 		signal.Notify(br.relay, br.signals...)
@@ -198,7 +249,7 @@ func (br *signalBreaker) trigger() Interface {
 	return br
 }
 
-func newTimedBreaker(timeout time.Duration) *timeoutBreaker {
+func newTimeoutBreaker(timeout time.Duration) *timeoutBreaker {
 	return &timeoutBreaker{newBreaker(), time.NewTimer(timeout)}
 }
 
@@ -215,7 +266,7 @@ func (br *timeoutBreaker) Close() {
 	})
 }
 
-// trigger starts listening internal timer to close the Done channel.
+// trigger starts listening to the internal timer to close the Done channel.
 func (br *timeoutBreaker) trigger() Interface {
 	go func() {
 		select {

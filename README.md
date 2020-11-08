@@ -46,64 +46,18 @@ if err := semaphore.Acquire(breaker.BreakByTimeout(time.Minute), 5); err != nil 
 }
 ```
 
-more consistent and reliable.
+more consistent and reliable. Additionally, I want to implement a Graceful Shutdown
+and Circuit Breaker on the same mechanism.
 
 ## 🤼‍♂️ How to
 
-```go
-import (
-	"bytes"
-	"context"
-	"fmt"
-	"io"
-	"net/http"
-	"os"
-	"time"
+### Do HTTP request with retries
 
-	"github.com/kamilsk/breaker"
-)
+...
 
-var NewYear = time.Time{}.AddDate(time.Now().Year(), 0, 0)
+### Graceful Shutdown HTTP server
 
-func Handle(rw http.ResponseWriter, req *http.Request) {
-	ctx, cancel := context.WithCancel(req.Context())
-	defer cancel()
-
-	deadline, _ := time.ParseDuration(req.Header.Get("X-Timeout"))
-	interrupter := breaker.Multiplex(
-		breaker.BreakByContext(context.WithTimeout(ctx, deadline)),
-		breaker.BreakByDeadline(NewYear),
-		breaker.BreakBySignal(os.Interrupt),
-	)
-	defer interrupter.Close()
-
-	buf, work := bytes.NewBuffer(nil), Work(ctx, struct{}{})
-	for {
-		select {
-		case b, ok := <-work:
-			if !ok {
-				rw.WriteHeader(http.StatusOK)
-				io.Copy(rw, buf)
-				return
-			}
-			buf.WriteByte(b)
-		case <-interrupter.Done():
-			rw.WriteHeader(http.StatusPartialContent)
-			rw.Header().Set("Content-Range", fmt.Sprintf("bytes=0-%d", buf.Len()))
-			io.Copy(rw, buf)
-			return
-		}
-	}
-}
-
-func Work(ctx context.Context, _ struct{}) <-chan byte {
-	outcome := make(chan byte, 1)
-
-	go func() { ... }()
-
-	return outcome
-}
-```
+...
 
 ## 🧩 Integration
 
@@ -114,6 +68,30 @@ You can use [go modules](https://github.com/golang/go/wiki/Modules) to manage it
 ```bash
 $ go get github.com/kamilsk/breaker@latest
 ```
+
+## 🤲 Outcomes
+
+### Console tool to execute commands for a limited time
+
+The example shows how to execute console commands for ten minutes.
+
+```bash
+$ date
+# Thu Jan  7 21:02:21
+$ breakit after 10m -- database run --port=5432
+$ breakit after 10m -- server run --port=8080
+$ breakit ps
+# +--------------------------+---------------------+
+# | Process                  | Done                |
+# +--------------------------+---------------------+
+# | database run --port=5432 | Thu Jan  7 21:12:24 |
+# | server run --port=8080   | Thu Jan  7 21:12:31 |
+# +--------------------------+---------------------+
+# |                    Total |                   2 |
+# +--------------------------+---------------------+
+```
+
+See more details [here][cli].
 
 ---
 
@@ -137,5 +115,6 @@ made with ❤️ for everyone
 [awesome.page]:     https://github.com/avelino/awesome-go#goroutines
 [awesome.icon]:     https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg
 
+[cli]:              https://github.com/octolab/breakit
 [retry]:            https://github.com/kamilsk/retry
 [semaphore]:        https://github.com/kamilsk/semaphore

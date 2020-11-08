@@ -21,11 +21,10 @@ type Interface interface {
 	Done() <-chan struct{}
 	// If Done is not yet closed, Err returns nil.
 	// If Done is closed, Err returns a non-nil error.
-	// After Err returns a non-nil error,
-	// successive calls to Err return the same error.
+	// After Err returns a non-nil error, successive calls to Err return the same error.
 	Err() error
 
-	// trigger is a private method to guarantee that the Breakers come from
+	// trigger is a private method to guarantee that the breakers come from
 	// this package and all of them return a valid Done channel.
 	trigger() Interface
 }
