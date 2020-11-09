@@ -199,11 +199,11 @@ func TestBreakBySignal(t *testing.T) {
 		go func() {
 			proc, err := os.FindProcess(os.Getpid())
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 			err = proc.Signal(syscall.SIGCHLD)
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 		}()
 		select {

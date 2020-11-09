@@ -53,11 +53,187 @@ and Circuit Breaker on the same mechanism.
 
 ### Do HTTP request with retries
 
-...
+```go
+interrupter := breaker.Multiplex(
+	breaker.BreakBySignal(os.Interrupt, os.Interrupt, syscall.SIGINT, syscall.SIGTERM),
+	breaker.BreakByTimeout(timeout),
+)
+defer interrupter.Close()
+
+ctx := breaker.ToContext(interrupter)
+ctx = context.WithValue(ctx, header, "...")
+
+req, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil)
+if err != nil {
+	panic(err)
+}
+
+var resp *http.Response
+action := func(ctx context.Context) (err error) {
+	req = req.Clone(ctx)
+
+	source := ctx.Value(header).(string)
+	req.Header.Set(header, source)
+
+	resp, err = http.DefaultClient.Do(req)
+	return err
+}
+
+if err := retry.Do(ctx, action); err != nil {
+	panic(err)
+}
+```
+
+<details>
+  <summary>Full example</summary>
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"syscall"
+	"time"
+
+	"github.com/kamilsk/breaker"
+	"github.com/kamilsk/retry/v5"
+)
+
+func main() {
+	const (
+		header  = "X-Message"
+		timeout = time.Minute
+	)
+
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		time.Sleep(timeout / 10)
+		_, _ = rw.Write([]byte(req.Header.Get(header)))
+	}))
+	defer server.Close()
+
+	interrupter := breaker.Multiplex(
+		breaker.BreakBySignal(os.Interrupt, os.Interrupt, syscall.SIGINT, syscall.SIGTERM),
+		breaker.BreakByTimeout(timeout),
+	)
+	defer interrupter.Close()
+
+	ctx := breaker.ToContext(interrupter)
+	ctx = context.WithValue(ctx, header, "flexible mechanism to make execution flow interruptible")
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	var resp *http.Response
+	action := func(ctx context.Context) (err error) {
+		req = req.Clone(ctx)
+
+		source := ctx.Value(header).(string)
+		req.Header.Set(header, source)
+
+		resp, err = http.DefaultClient.Do(req)
+		return err
+	}
+
+	if err := retry.Do(ctx, action); err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+	_, _ = io.Copy(os.Stdout, resp.Body)
+}
+```
+
+[Play it](https://play.golang.org/p/IpMEC5GM0s9)!
+</details>
 
 ### Graceful Shutdown HTTP server
 
-...
+```go
+interrupter := breaker.Multiplex(
+	breaker.BreakBySignal(os.Interrupt, os.Interrupt, syscall.SIGINT, syscall.SIGTERM),
+	breaker.BreakByTimeout(timeout),
+)
+defer interrupter.Close()
+
+server := http.Server{
+	BaseContext: func(net.Listener) context.Context {
+		return breaker.ToContext(interrupter)
+	},
+}
+go func() {
+	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+		log.Fatal(err)
+	}
+}()
+
+<-interrupter.Done()
+if errors.Is(interrupter.Err(), breaker.Interrupted) {
+	if err := server.Shutdown(context.TODO()); err != nil {
+		panic(err)
+	}
+}
+```
+
+<details>
+  <summary>Full example</summary>
+
+```go
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log"
+	"net"
+	"net/http"
+	"os"
+	"syscall"
+	"time"
+
+	"github.com/kamilsk/breaker"
+)
+
+func main() {
+	const timeout = time.Minute
+
+	interrupter := breaker.Multiplex(
+		breaker.BreakBySignal(os.Interrupt, os.Interrupt, syscall.SIGINT, syscall.SIGTERM),
+		breaker.BreakByTimeout(timeout),
+	)
+	defer interrupter.Close()
+
+	server := http.Server{
+		Addr:    ":8080",
+		Handler: http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {}),
+		BaseContext: func(net.Listener) context.Context {
+			return breaker.ToContext(interrupter)
+		},
+	}
+	go func() {
+		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			log.Fatal(err)
+		}
+	}()
+
+	<-interrupter.Done()
+	if err := interrupter.Err(); errors.Is(err, breaker.Interrupted) {
+		if err := server.Shutdown(context.TODO()); err != nil {
+			panic(err)
+		}
+	}
+	fmt.Println("graceful shutdown")
+}
+```
+
+[Play it](https://play.golang.org/p/-5OyqynxWkr)!
+</details>
 
 ## 🧩 Integration
 
