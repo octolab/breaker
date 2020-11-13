@@ -30,7 +30,7 @@ A full description of the idea is available [here][design.page].
 
 ## 🏆 Motivation
 
-I have to make [retry][] package:
+I have to make modules [github.com/kamilsk/retry/v5][retry]:
 
 ```go
 if err := retry.Retry(breaker.BreakByTimeout(time.Minute), action); err != nil {
@@ -38,7 +38,7 @@ if err := retry.Retry(breaker.BreakByTimeout(time.Minute), action); err != nil {
 }
 ```
 
-and [semaphore][] package:
+and [github.com/kamilsk/semaphore/v5][semaphore]:
 
 ```go
 if err := semaphore.Acquire(breaker.BreakByTimeout(time.Minute), 5); err != nil {
@@ -46,8 +46,9 @@ if err := semaphore.Acquire(breaker.BreakByTimeout(time.Minute), 5); err != nil 
 }
 ```
 
-more consistent and reliable. Additionally, I want to implement a Graceful Shutdown
-and Circuit Breaker on the same mechanism.
+more consistent and reliable.
+
+Additionally, I want to implement a Graceful Shutdown on the same mechanism.
 
 ## 🤼‍♂️ How to
 
