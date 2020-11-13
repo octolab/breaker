@@ -55,7 +55,7 @@ and Circuit Breaker on the same mechanism.
 
 ```go
 interrupter := breaker.Multiplex(
-	breaker.BreakBySignal(os.Interrupt, os.Interrupt, syscall.SIGINT, syscall.SIGTERM),
+	breaker.BreakBySignal(os.Interrupt, syscall.SIGINT, syscall.SIGTERM),
 	breaker.BreakByTimeout(timeout),
 )
 defer interrupter.Close()
@@ -117,7 +117,7 @@ func main() {
 	defer server.Close()
 
 	interrupter := breaker.Multiplex(
-		breaker.BreakBySignal(os.Interrupt, os.Interrupt, syscall.SIGINT, syscall.SIGTERM),
+		breaker.BreakBySignal(os.Interrupt, syscall.SIGINT, syscall.SIGTERM),
 		breaker.BreakByTimeout(timeout),
 	)
 	defer interrupter.Close()
@@ -149,14 +149,14 @@ func main() {
 }
 ```
 
-[Play it](https://play.golang.org/p/IpMEC5GM0s9)!
+[Play it](https://play.golang.org/p/nsvS79E7VRA)!
 </details>
 
 ### Graceful Shutdown HTTP server
 
 ```go
 interrupter := breaker.Multiplex(
-	breaker.BreakBySignal(os.Interrupt, os.Interrupt, syscall.SIGINT, syscall.SIGTERM),
+	breaker.BreakBySignal(os.Interrupt, syscall.SIGINT, syscall.SIGTERM),
 	breaker.BreakByTimeout(timeout),
 )
 defer interrupter.Close()
@@ -204,7 +204,7 @@ func main() {
 	const timeout = time.Minute
 
 	interrupter := breaker.Multiplex(
-		breaker.BreakBySignal(os.Interrupt, os.Interrupt, syscall.SIGINT, syscall.SIGTERM),
+		breaker.BreakBySignal(os.Interrupt, syscall.SIGINT, syscall.SIGTERM),
 		breaker.BreakByTimeout(timeout),
 	)
 	defer interrupter.Close()
@@ -232,7 +232,7 @@ func main() {
 }
 ```
 
-[Play it](https://play.golang.org/p/-5OyqynxWkr)!
+[Play it](https://play.golang.org/p/D7-nqT-ncR0)!
 </details>
 
 ## 🧩 Integration
