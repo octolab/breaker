@@ -35,21 +35,13 @@ func Multiplex(breakers ...Interface) Interface {
 //  background.Job().Do(interrupter)
 //
 func MultiplexTwo(one, two Interface) Interface {
-	br := newBreaker()
-	go func() {
-		defer br.Close()
-		select {
-		case <-one.Done():
-		case <-two.Done():
-		}
-	}()
-	return br
+	return newMultiplexedBreaker([]Interface{one, two, stub{}}).trigger()
 }
 
 // MultiplexThree combines three breakers into one.
 // It's an optimized version of a more generic Multiplex.
 //
-//  interrupter := breaker.MultiplexTwo(
+//  interrupter := breaker.MultiplexThree(
 //  	breaker.BreakByContext(req.Context()),
 //  	breaker.BreakBySignal(os.Interrupt),
 //  	breaker.BreakByTimeout(time.Minute),
@@ -59,19 +51,13 @@ func MultiplexTwo(one, two Interface) Interface {
 //  background.Job().Do(interrupter)
 //
 func MultiplexThree(one, two, three Interface) Interface {
-	br := newBreaker()
-	go func() {
-		defer br.Close()
-		select {
-		case <-one.Done():
-		case <-two.Done():
-		case <-three.Done():
-		}
-	}()
-	return br
+	return newMultiplexedBreaker([]Interface{one, two, three}).trigger()
 }
 
-func newMultiplexedBreaker(breakers []Interface) Interface {
+func newMultiplexedBreaker(breakers []Interface) *multiplexedBreaker {
+	for len(breakers) < 3 {
+		breakers = append(breakers, stub{})
+	}
 	return &multiplexedBreaker{newBreaker(), breakers}
 }
 
@@ -91,14 +77,22 @@ func (br *multiplexedBreaker) Close() {
 // trigger starts listening to the all Done channels of multiplexed breakers.
 func (br *multiplexedBreaker) trigger() Interface {
 	go func() {
-		brs := make([]reflect.SelectCase, 0, len(br.breakers))
-		for _, br := range br.breakers {
-			brs = append(brs, reflect.SelectCase{
-				Dir:  reflect.SelectRecv,
-				Chan: reflect.ValueOf(br.Done()),
-			})
+		if len(br.breakers) == 3 {
+			select {
+			case <-br.breakers[0].Done():
+			case <-br.breakers[1].Done():
+			case <-br.breakers[2].Done():
+			}
+		} else {
+			brs := make([]reflect.SelectCase, 0, len(br.breakers))
+			for _, br := range br.breakers {
+				brs = append(brs, reflect.SelectCase{
+					Dir:  reflect.SelectRecv,
+					Chan: reflect.ValueOf(br.Done()),
+				})
+			}
+			reflect.Select(brs)
 		}
-		reflect.Select(brs)
 		br.Close()
 
 		// the goroutine is done
@@ -116,3 +110,10 @@ func (list each) Close() {
 		br.Close()
 	}
 }
+
+type stub struct{}
+
+func (br stub) Close()                {}
+func (br stub) Done() <-chan struct{} { return nil }
+func (br stub) Err() error            { return nil }
+func (br stub) trigger() Interface    { return br }
