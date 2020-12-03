@@ -2,11 +2,33 @@ package breaker_test
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
 	. "github.com/kamilsk/breaker"
 )
+
+func TestMultiplexTwo(t *testing.T) {
+	t.Parallel()
+
+	br := MultiplexTwo(
+		BreakByDeadline(time.Now().Add(-delta)),
+		BreakByTimeout(time.Hour),
+	)
+	checkBreakerIsReleased(t, br)
+}
+
+func TestMultiplexThree(t *testing.T) {
+	t.Parallel()
+
+	br := MultiplexThree(
+		BreakByDeadline(time.Now().Add(-delta)),
+		BreakBySignal(os.Kill),
+		BreakByTimeout(time.Hour),
+	)
+	checkBreakerIsReleased(t, br)
+}
 
 func TestWithContext(t *testing.T) {
 	t.Parallel()

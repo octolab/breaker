@@ -20,44 +20,13 @@ func Multiplex(breakers ...Interface) Interface {
 	if len(breakers) == 0 {
 		return closedBreaker()
 	}
-	return newMultiplexedBreaker(breakers).trigger()
-}
-
-// MultiplexTwo combines two breakers into one.
-// It's an optimized version of a more generic Multiplex.
-//
-//  interrupter := breaker.MultiplexTwo(
-//  	breaker.BreakByContext(req.Context()),
-//  	breaker.BreakBySignal(os.Interrupt),
-//  )
-//  defer interrupter.Close()
-//
-//  background.Job().Do(interrupter)
-//
-func MultiplexTwo(one, two Interface) Interface {
-	return newMultiplexedBreaker([]Interface{one, two, stub{}}).trigger()
-}
-
-// MultiplexThree combines three breakers into one.
-// It's an optimized version of a more generic Multiplex.
-//
-//  interrupter := breaker.MultiplexThree(
-//  	breaker.BreakByContext(req.Context()),
-//  	breaker.BreakBySignal(os.Interrupt),
-//  	breaker.BreakByTimeout(time.Minute),
-//  )
-//  defer interrupter.Close()
-//
-//  background.Job().Do(interrupter)
-//
-func MultiplexThree(one, two, three Interface) Interface {
-	return newMultiplexedBreaker([]Interface{one, two, three}).trigger()
-}
-
-func newMultiplexedBreaker(breakers []Interface) *multiplexedBreaker {
 	for len(breakers) < 3 {
 		breakers = append(breakers, stub{})
 	}
+	return newMultiplexedBreaker(breakers).trigger()
+}
+
+func newMultiplexedBreaker(breakers []Interface) *multiplexedBreaker {
 	return &multiplexedBreaker{newBreaker(), breakers}
 }
 

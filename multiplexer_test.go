@@ -1,6 +1,7 @@
 package breaker_test
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -16,8 +17,11 @@ func TestMultiplex(t *testing.T) {
 
 		timeout := 5 * delta
 		br := Multiplex(
-			BreakByTimeout(timeout),
+			BreakByChannel(context.TODO().Done()),
+			BreakByContext(context.WithCancel(context.TODO())),
 			BreakByDeadline(time.Now().Add(time.Hour)),
+			BreakBySignal(os.Interrupt),
+			BreakByTimeout(timeout),
 		)
 
 		start := time.Now()
@@ -53,25 +57,4 @@ func TestMultiplex(t *testing.T) {
 		closeBreakerConcurrently(br, times)
 		checkBreakerIsReleased(t, br)
 	})
-}
-
-func TestMultiplexTwo(t *testing.T) {
-	t.Parallel()
-
-	br := MultiplexTwo(
-		BreakByDeadline(time.Now().Add(-delta)),
-		BreakByTimeout(time.Hour),
-	)
-	checkBreakerIsReleased(t, br)
-}
-
-func TestMultiplexThree(t *testing.T) {
-	t.Parallel()
-
-	br := MultiplexThree(
-		BreakByDeadline(time.Now().Add(-delta)),
-		BreakBySignal(os.Kill),
-		BreakByTimeout(time.Hour),
-	)
-	checkBreakerIsReleased(t, br)
 }
