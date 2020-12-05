@@ -33,6 +33,7 @@ func Example_httpRequest() {
 		panic(err)
 	}
 
+	//nolint:bodyclose
 	if _, err := http.DefaultClient.Do(req); errors.Is(err, context.Canceled) && errors.Is(breaker.Err(), Interrupted) {
 		fmt.Println("works well")
 	}
