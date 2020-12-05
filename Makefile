@@ -38,11 +38,19 @@ export PATH  := $(GOBIN):$(PATH)
 GOFLAGS   ?= -mod=
 GOPRIVATE ?= go.octolab.net
 GOPROXY   ?= direct
+GOTEST    ?= $(GOBIN)/gotest
 LOCAL     ?= $(MODULE)
 MODULE    ?= `go list -m $(GOFLAGS)`
 PACKAGES  ?= `go list $(GOFLAGS) ./...`
 PATHS     ?= $(shell echo $(PACKAGES) | sed -e "s|$(MODULE)/||g" | sed -e "s|$(MODULE)|$(PWD)/*.go|g")
 TIMEOUT   ?= 1s
+
+ifeq (, $(wildcard $(GOTEST)))
+	GOTEST = $(shell command -v gotest)
+endif
+ifeq (, $(GOTEST))
+	GOTEST = go test
+endif
 
 ifeq (, $(PACKAGES))
 	PACKAGES = $(MODULE)
@@ -58,6 +66,7 @@ export GOPROXY   := $(GOPROXY)
 
 go-env:
 	@echo "GOFLAGS:     $(strip `go env GOFLAGS`)"
+	@echo "GOTEST:      $(GOTEST)"
 	@echo "GOPRIVATE:   $(strip `go env GOPRIVATE`)"
 	@echo "GOPROXY:     $(strip `go env GOPROXY`)"
 	@echo "LOCAL:       $(LOCAL)"
@@ -129,11 +138,6 @@ lint:
 	@looppointer ./...
 .PHONY: lint
 
-GOTEST ?= `command -v gotest`
-ifeq (, $(GOTEST))
-	GOTEST = go test
-endif
-
 test:
 	@$(GOTEST) -race -timeout $(TIMEOUT) $(PACKAGES)
 .PHONY: test
@@ -165,11 +169,6 @@ test-with-coverage:
 test-with-coverage-report: test-with-coverage
 	@go tool cover -html c.out
 .PHONY: test-with-coverage-report
-
-GOTEST ?= `command -v gotest`
-ifeq (, $(GOTEST))
-	GOTEST = go test
-endif
 
 test-integration: GOTAGS = integration
 test-integration:

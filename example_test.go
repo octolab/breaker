@@ -45,11 +45,12 @@ func Example_gracefulShutdown() {
 
 	breaker := Multiplex(
 		BreakBySignal(os.Interrupt, syscall.SIGINT, syscall.SIGTERM),
-		BreakByTimeout(250*time.Millisecond),
+		BreakByTimeout(200*time.Millisecond),
 	)
 	defer breaker.Close()
 
 	server := http.Server{
+		Addr: "127.0.0.1:",
 		BaseContext: func(net.Listener) context.Context {
 			return ToContext(breaker)
 		},
