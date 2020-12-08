@@ -7,8 +7,9 @@ GO111MODULE   = on
 SHELL         = /bin/bash -euo pipefail
 
 AT    := @
-OS    := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 ARCH  := $(shell uname -m | tr '[:upper:]' '[:lower:]')
+OS    := $(shell uname -s | tr '[:upper:]' '[:lower:]')
+DATE  := $(shell date +%Y-%m-%dT%T%Z)
 
 SHELL ?= /bin/bash -euo pipefail
 
@@ -31,6 +32,36 @@ rmdir:
 		find $${dir%%/} -depth -type d -empty | xargs rmdir; \
 	done
 .PHONY: rmdir
+
+COMMIT  := $(shell git rev-parse --verify HEAD)
+RELEASE := $(shell git describe --tags 2>/dev/null | rev | cut -d - -f3- | rev)
+
+ifdef GIT_HOOKS
+
+hooks: unhook
+	$(AT) for hook in $(GIT_HOOKS); do cp githooks/$$hook .git/hooks/; done
+.PHONY: hooks
+
+unhook:
+	@ls .git/hooks | grep -v .sample | sed 's|.*|.git/hooks/&|' | xargs rm -f || true
+.PHONY: unhook
+
+define hook_tpl
+$(1):
+	@githooks/$(1)
+.PHONY: $(1)
+endef
+
+render_hook_tpl = $(eval $(call hook_tpl,$(hook)))
+$(foreach hook,$(GIT_HOOKS),$(render_hook_tpl))
+
+endif
+
+git-check:
+	$(AT) git diff --exit-code >/dev/null
+	$(AT) git diff --cached --exit-code >/dev/null
+	$(AT) ! git ls-files --others --exclude-standard | grep -q ^
+.PHONY: git-check
 
 export GOBIN := $(PWD)/bin/$(OS)/$(ARCH)
 export PATH  := $(GOBIN):$(PATH)
@@ -133,6 +164,10 @@ go-generate:
 	@go generate $(PACKAGES)
 .PHONY: go-generate
 
+go-pkg:
+	@open https://pkg.go.dev/$(MODULE)@$(RELEASE)
+.PHONY: go-pkg
+
 lint:
 	@golangci-lint run ./...
 	@looppointer ./...
@@ -207,33 +242,6 @@ toolset:
 		go generate -tags $(GOTAGS) tools.go; \
 	)
 .PHONY: toolset
-
-ifdef GIT_HOOKS
-
-hooks: unhook
-	$(AT) for hook in $(GIT_HOOKS); do cp githooks/$$hook .git/hooks/; done
-.PHONY: hooks
-
-unhook:
-	@ls .git/hooks | grep -v .sample | sed 's|.*|.git/hooks/&|' | xargs rm -f || true
-.PHONY: unhook
-
-define hook_tpl
-$(1):
-	@githooks/$(1)
-.PHONY: $(1)
-endef
-
-render_hook_tpl = $(eval $(call hook_tpl,$(hook)))
-$(foreach hook,$(GIT_HOOKS),$(render_hook_tpl))
-
-endif
-
-git-check:
-	$(AT) git diff --exit-code >/dev/null
-	$(AT) git diff --cached --exit-code >/dev/null
-	$(AT) ! git ls-files --others --exclude-standard | grep -q ^
-.PHONY: git-check
 
 ifdef GO_VERSIONS
 
