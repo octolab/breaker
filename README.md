@@ -1,4 +1,4 @@
-> # 🚧 breaker [![Awesome][awesome.icon]][awesome.page]
+> # 🚧 breaker [![Awesome Go][awesome.icon]][awesome.page]
 >
 > Flexible mechanism to make execution flow interruptible.
 
@@ -279,9 +279,7 @@ $ breakit ps
 
 See more details [here][cli].
 
----
-
-made with ❤️ for everyone
+<p align="right">made with ❤️ for everyone</p>
 
 [build.page]:       https://travis-ci.com/kamilsk/breaker
 [build.icon]:       https://travis-ci.com/kamilsk/breaker.svg?branch=master
