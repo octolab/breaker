@@ -84,5 +84,6 @@ type stub struct{}
 
 func (br stub) Close()                {}
 func (br stub) Done() <-chan struct{} { return nil }
-func (br stub) Err() error            { return nil }
+func (br stub) Err() error            { return Interrupted }
+func (br stub) IsReleased() bool      { return true }
 func (br stub) trigger() Interface    { return br }
