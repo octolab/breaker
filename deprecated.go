@@ -13,7 +13,7 @@ import "context"
 //  background.Job().Do(interrupter)
 //
 // Deprecated: Multiplex has the same optimization under the hood now.
-// TODO:v2 will be removed.
+// It will be removed at v2.
 func MultiplexTwo(one, two Interface) Interface {
 	return newMultiplexedBreaker([]Interface{one, two, stub{}}).trigger()
 }
@@ -31,7 +31,7 @@ func MultiplexTwo(one, two Interface) Interface {
 //  background.Job().Do(interrupter)
 //
 // Deprecated: Multiplex has the same optimization under the hood now.
-// TODO:v2 will be removed.
+// It will be removed at v2.
 func MultiplexThree(one, two, three Interface) Interface {
 	return newMultiplexedBreaker([]Interface{one, two, three}).trigger()
 }
@@ -44,7 +44,7 @@ func MultiplexThree(one, two, three Interface) Interface {
 //  background.Job().Run(ctx)
 //
 // Deprecated: use BreakByContext instead.
-// TODO:v2 will be removed.
+// It will be removed at v2.
 func WithContext(ctx context.Context) (Interface, context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	return (&contextBreaker{ctx, cancel}).trigger(), ctx
