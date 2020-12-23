@@ -51,6 +51,7 @@ linters:
 #    - gomodguard         # https://github.com/ryancurrah/gomodguard
 #    - goprintffuncname   # https://github.com/jirfag/go-printf-func-name
 #    - gosec              # https://github.com/securego/gosec
+#    - ifshort            # https://github.com/esimonov/ifshort
 #    - interfacer         # https://github.com/mvdan/interfacer
 #    - lll                # https://github.com/walle/lll
 #    - maligned           # https://github.com/mdempsky/maligned

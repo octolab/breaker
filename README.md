@@ -281,6 +281,8 @@ See more details [here][cli].
 
 <p align="right">made with ❤️ for everyone</p>
 
+[awesome.page]:     https://github.com/avelino/awesome-go#goroutines
+[awesome.icon]:     https://awesome.re/mentioned-badge.svg
 [build.page]:       https://travis-ci.com/kamilsk/breaker
 [build.icon]:       https://travis-ci.com/kamilsk/breaker.svg?branch=master
 [coverage.page]:    https://codeclimate.com/github/kamilsk/breaker/test_coverage
@@ -296,9 +298,8 @@ See more details [here][cli].
 [mirror.page]:      https://bitbucket.org/kamilsk/breaker
 [mirror.icon]:      https://img.shields.io/badge/mirror-bitbucket-blue
 
-[awesome.page]:     https://github.com/avelino/awesome-go#goroutines
-[awesome.icon]:     https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg
-
 [cli]:              https://github.com/octolab/breakit
 [retry]:            https://github.com/kamilsk/retry
 [semaphore]:        https://github.com/kamilsk/semaphore
+
+[_]:                https://img.shields.io/sourcegraph/rrc/github.com/kamilsk/breaker
