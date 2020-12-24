@@ -1,9 +1,6 @@
 package breaker
 
-import (
-	"reflect"
-	"sync/atomic"
-)
+import "reflect"
 
 // Multiplex combines multiple breakers into one.
 //
@@ -27,34 +24,37 @@ func Multiplex(breakers ...Interface) Interface {
 }
 
 func newMultiplexedBreaker(breakers []Interface) *multiplexedBreaker {
-	return &multiplexedBreaker{newBreaker(), breakers}
+	return &multiplexedBreaker{newBreaker(), make(chan struct{}), breakers}
 }
 
 type multiplexedBreaker struct {
 	*breaker
-	breakers []Interface
+	internal chan struct{}
+	external []Interface
 }
 
 // Close closes the Done channel and releases resources associated with it.
 func (br *multiplexedBreaker) Close() {
-	br.closer.Do(func() {
-		each(br.breakers).Close()
-		close(br.signal)
-	})
+	br.closer.Do(func() { close(br.internal) })
 }
 
 // trigger starts listening to the all Done channels of multiplexed breakers.
 func (br *multiplexedBreaker) trigger() Interface {
 	go func() {
-		if len(br.breakers) == 3 {
+		if len(br.external) == 3 {
 			select {
-			case <-br.breakers[0].Done():
-			case <-br.breakers[1].Done():
-			case <-br.breakers[2].Done():
+			case <-br.external[0].Done():
+			case <-br.external[1].Done():
+			case <-br.external[2].Done():
+			case <-br.internal:
 			}
 		} else {
-			brs := make([]reflect.SelectCase, 0, len(br.breakers))
-			for _, br := range br.breakers {
+			brs := make([]reflect.SelectCase, 0, len(br.external)+1)
+			brs = append(brs, reflect.SelectCase{
+				Dir:  reflect.SelectRecv,
+				Chan: reflect.ValueOf(br.internal),
+			})
+			for _, br := range br.external {
 				brs = append(brs, reflect.SelectCase{
 					Dir:  reflect.SelectRecv,
 					Chan: reflect.ValueOf(br.Done()),
@@ -62,10 +62,9 @@ func (br *multiplexedBreaker) trigger() Interface {
 			}
 			reflect.Select(brs)
 		}
+		each(br.external).Close()
 		br.Close()
-
-		// the goroutine is done
-		atomic.StoreInt32(&br.released, 1)
+		close(br.signal)
 	}()
 	return br
 }

@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -37,7 +36,7 @@ func New() Interface {
 //  background.Job().Do(interrupter)
 //
 func BreakByChannel(signal <-chan struct{}) Interface {
-	return (&channelBreaker{newBreaker(), signal}).trigger()
+	return (&channelBreaker{newBreaker(), make(chan struct{}), signal}).trigger()
 }
 
 // BreakByContext returns a new breaker based on the Context.
@@ -129,17 +128,13 @@ func newBreaker() *breaker {
 }
 
 type breaker struct {
-	closer   sync.Once
-	signal   chan struct{}
-	released int32
+	closer sync.Once
+	signal chan struct{}
 }
 
 // Close closes the Done channel and releases resources associated with it.
 func (br *breaker) Close() {
-	br.closer.Do(func() {
-		close(br.signal)
-		atomic.StoreInt32(&br.released, 1)
-	})
+	br.closer.Do(func() { close(br.signal) })
 }
 
 // Done returns a channel that's closed when a cancellation signal occurred.
@@ -150,15 +145,19 @@ func (br *breaker) Done() <-chan struct{} {
 // Err returns a non-nil error if the Done channel is closed and nil otherwise.
 // After Err returns a non-nil error, successive calls to Err return the same error.
 func (br *breaker) Err() error {
-	if atomic.LoadInt32(&br.released) == 1 {
+	select {
+	case <-br.signal:
 		return Interrupted
+	default:
+		return nil
 	}
-	return nil
 }
 
 // IsReleased returns true if resources associated with the breaker were released.
+//
+// Deprecated: see the extended interface.
 func (br *breaker) IsReleased() bool {
-	return atomic.LoadInt32(&br.released) == 1
+	return br.Err() != nil
 }
 
 func (br *breaker) trigger() Interface {
@@ -167,27 +166,24 @@ func (br *breaker) trigger() Interface {
 
 type channelBreaker struct {
 	*breaker
-	relay <-chan struct{}
+	internal chan struct{}
+	external <-chan struct{}
 }
 
 // Close closes the Done channel and releases resources associated with it.
 func (br *channelBreaker) Close() {
-	br.closer.Do(func() {
-		close(br.signal)
-	})
+	br.closer.Do(func() { close(br.internal) })
 }
 
 // trigger starts listening to the internal signal to close the Done channel.
 func (br *channelBreaker) trigger() Interface {
 	go func() {
 		select {
-		case <-br.relay:
-		case <-br.signal:
+		case <-br.external:
+			br.Close()
+		case <-br.internal:
 		}
-		br.Close()
-
-		// the goroutine is done
-		atomic.StoreInt32(&br.released, 1)
+		close(br.signal)
 	}()
 	return br
 }
@@ -203,13 +199,10 @@ func (br *contextBreaker) Close() {
 }
 
 // IsReleased returns true if resources associated with the breaker were released.
+//
+// Deprecated: see the extended interface.
 func (br *contextBreaker) IsReleased() bool {
-	select {
-	case <-br.Done():
-		return true
-	default:
-		return false
-	}
+	return br.Err() != nil
 }
 
 func (br *contextBreaker) trigger() Interface {
@@ -217,67 +210,62 @@ func (br *contextBreaker) trigger() Interface {
 }
 
 func newSignalBreaker(signals []os.Signal) *signalBreaker {
-	return &signalBreaker{newBreaker(), make(chan os.Signal, len(signals)), signals}
+	return &signalBreaker{newBreaker(), make(chan struct{}), make(chan os.Signal, len(signals)), signals}
 }
 
 type signalBreaker struct {
 	*breaker
-	relay   chan os.Signal
-	signals []os.Signal
+	internal chan struct{}
+	external chan os.Signal
+	signals  []os.Signal
 }
 
 // Close closes the Done channel and releases resources associated with it.
 func (br *signalBreaker) Close() {
-	br.closer.Do(func() {
-		signal.Stop(br.relay)
-		close(br.signal)
-	})
+	br.closer.Do(func() { close(br.internal) })
 }
 
 // trigger starts listening to the required signals to close the Done channel.
 func (br *signalBreaker) trigger() Interface {
 	go func() {
-		signal.Notify(br.relay, br.signals...)
+		signal.Notify(br.external, br.signals...)
 		select {
-		case <-br.relay:
-		case <-br.signal:
+		case <-br.external:
+			br.Close()
+		case <-br.internal:
 		}
-		br.Close()
-
-		// the goroutine is done
-		atomic.StoreInt32(&br.released, 1)
+		signal.Stop(br.external)
+		close(br.external)
+		close(br.signal)
 	}()
 	return br
 }
 
 func newTimeoutBreaker(timeout time.Duration) *timeoutBreaker {
-	return &timeoutBreaker{newBreaker(), time.NewTimer(timeout)}
+	return &timeoutBreaker{newBreaker(), make(chan struct{}), time.NewTimer(timeout)}
 }
 
 type timeoutBreaker struct {
 	*breaker
-	*time.Timer
+	internal chan struct{}
+	external *time.Timer
 }
 
 // Close closes the Done channel and releases resources associated with it.
 func (br *timeoutBreaker) Close() {
-	br.closer.Do(func() {
-		stop(br.Timer)
-		close(br.signal)
-	})
+	br.closer.Do(func() { close(br.internal) })
 }
 
 // trigger starts listening to the internal timer to close the Done channel.
 func (br *timeoutBreaker) trigger() Interface {
 	go func() {
 		select {
-		case <-br.Timer.C:
-		case <-br.signal:
+		case <-br.external.C:
+			br.Close()
+		case <-br.internal:
 		}
-		br.Close()
-
-		// the goroutine is done
-		atomic.StoreInt32(&br.released, 1)
+		stop(br.external)
+		close(br.signal)
 	}()
 	return br
 }

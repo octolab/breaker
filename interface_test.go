@@ -4,6 +4,10 @@ import "testing"
 
 type extended interface {
 	Interface
+	// IsReleased returns true if resources associated with the breaker were released.
+	//
+	// Deprecated: the original implementation contained a bug,
+	// and there is no longer any need for this method. It will be removed at v2.
 	IsReleased() bool
 }
 

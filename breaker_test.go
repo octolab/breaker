@@ -304,9 +304,7 @@ func TestToContext(t *testing.T) {
 	}
 
 	br.Close()
-	if time.Sleep(delta); ctx.Err() == nil {
-		t.Error("invalid behavior")
-	}
+	<-ctx.Done()
 }
 
 // helpers
@@ -319,7 +317,7 @@ const (
 func checkBreakerIsReleased(tb testing.TB, br Interface) {
 	tb.Helper()
 
-	time.Sleep(delta)
+	<-br.Done()
 	checkBreakerIsReleasedFast(tb, br)
 }
 
